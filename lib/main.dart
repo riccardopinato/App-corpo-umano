@@ -242,127 +242,252 @@ class AtlasPage extends StatefulWidget {
   @override State<AtlasPage> createState()=>_AtlasPageState();
 }
 
+class AtlasLayerData {
+  final String id, label, emoji, imageUrl, credit;
+  final List<AtlasHotspot> hotspots;
+  const AtlasLayerData({required this.id,required this.label,required this.emoji,required this.imageUrl,required this.credit,required this.hotspots});
+}
+
+class AtlasHotspot {
+  final String name, subtitle, emoji;
+  final double x, y;
+  const AtlasHotspot(this.name,this.subtitle,this.emoji,this.x,this.y);
+}
+
 class _AtlasPageState extends State<AtlasPage> {
-  bool skeleton=false,muscles=false,organs=true,nerves=false,vessels=false,back=false;
-  double opacity=.18;
+  int layerIndex = 0;
+  bool showLabels = true;
+  final TransformationController _transform = TransformationController();
+
+  static const layers = <AtlasLayerData>[
+    AtlasLayerData(
+      id:'organs',label:'Organi',emoji:'🫀',
+      imageUrl:'https://commons.wikimedia.org/w/thumb.php?f=Internal_organs.svg&w=1200',
+      credit:'Mikael Häggström · pubblico dominio',
+      hotspots:[
+        AtlasHotspot('Cervello','Sistema nervoso','🧠',.50,.10),
+        AtlasHotspot('Polmoni','Sistema respiratorio','🫁',.50,.30),
+        AtlasHotspot('Cuore','Sistema cardiovascolare','❤️',.52,.36),
+        AtlasHotspot('Fegato','Sistema digerente','🟤',.43,.48),
+        AtlasHotspot('Stomaco','Sistema digerente','🥣',.58,.50),
+        AtlasHotspot('Reni','Sistema urinario','🫘',.50,.55),
+        AtlasHotspot('Intestino tenue','Sistema digerente','➰',.50,.65),
+        AtlasHotspot('Colon','Sistema digerente','🟫',.50,.69),
+      ],
+    ),
+    AtlasLayerData(
+      id:'skeleton',label:'Scheletro',emoji:'🦴',
+      imageUrl:'https://commons.wikimedia.org/w/thumb.php?f=Human_skeleton_(svg_template).svg&w=1200',
+      credit:'Mikael Häggström · CC0 / pubblico dominio',
+      hotspots:[
+        AtlasHotspot('Cranio','Scheletro assile','💀',.50,.09),
+        AtlasHotspot('Clavicola','Cintura scapolare','🦴',.50,.22),
+        AtlasHotspot('Sterno','Scheletro assile','🦴',.50,.29),
+        AtlasHotspot('Omero','Arto superiore','🦴',.28,.34),
+        AtlasHotspot('Radio e ulna','Avambraccio','🦴',.20,.46),
+        AtlasHotspot('Carpo','8 ossa per mano','✋',.13,.57),
+        AtlasHotspot('Bacino','Cintura pelvica','🦴',.50,.57),
+        AtlasHotspot('Femore','Coscia','🦴',.43,.70),
+        AtlasHotspot('Rotula','Ginocchio','🦴',.43,.79),
+        AtlasHotspot('Tibia e fibula','Gamba','🦴',.43,.87),
+        AtlasHotspot('Tarso','7 ossa per piede','🦶',.41,.96),
+      ],
+    ),
+    AtlasLayerData(
+      id:'muscles',label:'Muscoli',emoji:'💪',
+      imageUrl:'https://commons.wikimedia.org/w/thumb.php?f=Muscles_front_and_back.svg&w=1400',
+      credit:'Nefronus · CC BY-SA 4.0',
+      hotspots:[
+        AtlasHotspot('Deltoide','Spalla','💪',.28,.22),
+        AtlasHotspot('Grande pettorale','Torace anteriore','💪',.31,.30),
+        AtlasHotspot('Bicipite brachiale','Braccio anteriore','💪',.22,.36),
+        AtlasHotspot('Retto dell’addome','Parete addominale','💪',.34,.48),
+        AtlasHotspot('Quadricipite','Coscia anteriore','💪',.31,.69),
+        AtlasHotspot('Trapezio','Dorso','💪',.72,.25),
+        AtlasHotspot('Gran dorsale','Dorso','💪',.72,.40),
+        AtlasHotspot('Grande gluteo','Regione glutea','💪',.72,.59),
+        AtlasHotspot('Ischiocrurali','Coscia posteriore','💪',.72,.70),
+        AtlasHotspot('Gastrocnemio','Polpaccio','💪',.72,.86),
+      ],
+    ),
+    AtlasLayerData(
+      id:'nervous',label:'Nervi',emoji:'⚡',
+      imageUrl:'https://commons.wikimedia.org/w/thumb.php?f=Nervous_system_diagram_unlabeled.svg&w=1000',
+      credit:'Wikimedia Commons',
+      hotspots:[
+        AtlasHotspot('Cervello','Sistema nervoso centrale','🧠',.50,.10),
+        AtlasHotspot('Midollo spinale','Sistema nervoso centrale','⚡',.50,.35),
+        AtlasHotspot('Plesso brachiale','C5-T1','⚡',.43,.27),
+        AtlasHotspot('Nervo mediano','Arto superiore','⚡',.26,.43),
+        AtlasHotspot('Plesso lombosacrale','Arto inferiore','⚡',.50,.58),
+        AtlasHotspot('Nervo sciatico','Arto inferiore','⚡',.44,.72),
+      ],
+    ),
+    AtlasLayerData(
+      id:'vascular',label:'Vasi',emoji:'🩸',
+      imageUrl:'https://commons.wikimedia.org/w/thumb.php?f=Circulatory_System_it.svg&w=1000',
+      credit:'LadyofHats / traduzione italiana · pubblico dominio',
+      hotspots:[
+        AtlasHotspot('Carotidi','Testa e collo','🔴',.49,.17),
+        AtlasHotspot('Vene giugulari','Testa e collo','🔵',.53,.17),
+        AtlasHotspot('Cuore','Pompa centrale','❤️',.50,.34),
+        AtlasHotspot('Aorta','Arteria principale','🔴',.52,.39),
+        AtlasHotspot('Vena cava inferiore','Ritorno venoso','🔵',.47,.45),
+        AtlasHotspot('Arterie renali','Reni','🔴',.50,.53),
+        AtlasHotspot('Arterie iliache','Pelvi','🔴',.50,.61),
+        AtlasHotspot('Arteria femorale','Coscia','🔴',.43,.72),
+      ],
+    ),
+  ];
+
   @override
-  Widget build(BuildContext context) {
+  void dispose(){_transform.dispose();super.dispose();}
+
+  @override
+  Widget build(BuildContext context){
+    final layer=layers[layerIndex];
     return Scaffold(
-      appBar:AppBar(title:const Text('Atlante umano')),
+      appBar:AppBar(
+        title:const Text('Atlante anatomico'),
+        actions:[
+          IconButton(tooltip:showLabels?'Nascondi etichette':'Mostra etichette',onPressed:()=>setState(()=>showLabels=!showLabels),icon:Icon(showLabels?Icons.label:Icons.label_off_outlined)),
+          IconButton(tooltip:'Reset zoom',onPressed:()=>_transform.value=Matrix4.identity(),icon:const Icon(Icons.center_focus_strong)),
+        ],
+      ),
       body:Column(children:[
-        SizedBox(height:46,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:12),children:[
-          FilterChip(label:const Text('🫀 Organi'),selected:organs,onSelected:(v)=>setState(()=>organs=v)),
-          const SizedBox(width:6),
-          FilterChip(label:const Text('🦴 Scheletro'),selected:skeleton,onSelected:(v)=>setState(()=>skeleton=v)),
-          const SizedBox(width:6),
-          FilterChip(label:const Text('💪 Muscoli'),selected:muscles,onSelected:(v)=>setState(()=>muscles=v)),
-          const SizedBox(width:6),
-          FilterChip(label:const Text('⚡ Nervi'),selected:nerves,onSelected:(v)=>setState(()=>nerves=v)),
-          const SizedBox(width:6),
-          FilterChip(label:const Text('🩸 Vasi'),selected:vessels,onSelected:(v)=>setState(()=>vessels=v)),
-        ])),
-        Row(children:[
-          const SizedBox(width:12),
-          SegmentedButton<bool>(
-            segments:const [ButtonSegment(value:false,label:Text('Fronte')),ButtonSegment(value:true,label:Text('Retro'))],
-            selected:{back},
-            onSelectionChanged:(s)=>setState(()=>back=s.first),
-          ),
-          Expanded(child:Slider(min:.04,max:.55,value:opacity,onChanged:(v)=>setState(()=>opacity=v))),
-        ]),
-        Expanded(child:InteractiveViewer(
-          minScale:.7,maxScale:5,
-          child:AspectRatio(
-            aspectRatio:.52,
-            child:CustomPaint(
-              painter:BodyPainter(surfaceOpacity:opacity,skeleton:skeleton,muscles:muscles,organs:organs,nerves:nerves,vessels:vessels,back:back),
-              child:const SizedBox.expand(),
+        SizedBox(
+          height:54,
+          child:ListView.separated(
+            padding:const EdgeInsets.symmetric(horizontal:12,vertical:5),
+            scrollDirection:Axis.horizontal,
+            itemCount:layers.length,
+            separatorBuilder:(_,__)=>const SizedBox(width:7),
+            itemBuilder:(_,i)=>ChoiceChip(
+              selected:layerIndex==i,
+              label:Text(layers[i].emoji+' '+layers[i].label),
+              onSelected:(_){setState(()=>layerIndex=i);_transform.value=Matrix4.identity();},
             ),
           ),
-        )),
+        ),
+        Container(
+          margin:const EdgeInsets.fromLTRB(14,4,14,8),
+          padding:const EdgeInsets.symmetric(horizontal:12,vertical:9),
+          decoration:BoxDecoration(color:Theme.of(context).colorScheme.primaryContainer,borderRadius:BorderRadius.circular(18)),
+          child:Row(children:[
+            Expanded(child:Text(layer.emoji+' '+layer.label,style:const TextStyle(fontWeight:FontWeight.w900))),
+            const Icon(Icons.pinch_outlined,size:18),
+            const SizedBox(width:5),
+            const Text('Pizzica per zoom',style:TextStyle(fontSize:12)),
+          ]),
+        ),
+        Expanded(
+          child:Container(
+            margin:const EdgeInsets.symmetric(horizontal:10),
+            clipBehavior:Clip.antiAlias,
+            decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(24)),
+            child:InteractiveViewer(
+              transformationController:_transform,
+              minScale:.7,maxScale:6,boundaryMargin:const EdgeInsets.all(220),
+              child:AspectRatio(
+                aspectRatio:.64,
+                child:Stack(
+                  fit:StackFit.expand,
+                  children:[
+                    _AtlasImage(url:layer.imageUrl,fallbackLabel:layer.label),
+                    ...layer.hotspots.map((h)=>_AtlasHotspotWidget(hotspot:h,showLabel:showLabels)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding:const EdgeInsets.fromLTRB(16,8,16,12),
+          child:Row(children:[
+            const Icon(Icons.info_outline,size:16),
+            const SizedBox(width:6),
+            Expanded(child:Text(layer.credit,style:const TextStyle(fontSize:11,color:Colors.black54))),
+            Text(layer.hotspots.length.toString()+' hotspot',style:const TextStyle(fontSize:11,fontWeight:FontWeight.w800)),
+          ]),
+        ),
       ]),
     );
   }
 }
 
-class BodyPainter extends CustomPainter {
-  final double surfaceOpacity;
-  final bool skeleton,muscles,organs,nerves,vessels,back;
-  BodyPainter({required this.surfaceOpacity,required this.skeleton,required this.muscles,required this.organs,required this.nerves,required this.vessels,required this.back});
+class _AtlasImage extends StatelessWidget {
+  final String url,fallbackLabel;
+  const _AtlasImage({required this.url,required this.fallbackLabel});
   @override
-  void paint(Canvas c,Size s){
-    final cx=s.width/2;
-    final skin=Paint()..color=const Color(0xFFE9BFA5).withValues(alpha:surfaceOpacity);
-    c.drawOval(Rect.fromCenter(center:Offset(cx,s.height*.075),width:s.width*.22,height:s.height*.13),skin);
-    c.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center:Offset(cx,s.height*.37),width:s.width*.42,height:s.height*.48),Radius.circular(s.width*.18)),skin);
-    final limb=Paint()..color=skin.color..strokeCap=StrokeCap.round..strokeWidth=s.width*.095;
-    c.drawLine(Offset(cx-s.width*.18,s.height*.23),Offset(s.width*.10,s.height*.58),limb);
-    c.drawLine(Offset(cx+s.width*.18,s.height*.23),Offset(s.width*.90,s.height*.58),limb);
-    limb.strokeWidth=s.width*.12;
-    c.drawLine(Offset(cx-s.width*.09,s.height*.58),Offset(cx-s.width*.12,s.height*.95),limb);
-    c.drawLine(Offset(cx+s.width*.09,s.height*.58),Offset(cx+s.width*.12,s.height*.95),limb);
-    if(skeleton){
-      final p=Paint()..color=const Color(0xFFF3EED8)..style=PaintingStyle.stroke..strokeWidth=4..strokeCap=StrokeCap.round;
-      c.drawOval(Rect.fromCenter(center:Offset(cx,s.height*.075),width:s.width*.16,height:s.height*.11),p);
-      c.drawLine(Offset(cx,s.height*.14),Offset(cx,s.height*.60),p);
-      for(int i=0;i<9;i++){ final y=s.height*(.23+i*.025),w=s.width*(.18-i*.008); c.drawArc(Rect.fromCenter(center:Offset(cx,y),width:w*2,height:s.height*.07),0,pi,false,p); }
-      c.drawLine(Offset(cx-s.width*.17,s.height*.23),Offset(s.width*.20,s.height*.55),p);
-      c.drawLine(Offset(cx+s.width*.17,s.height*.23),Offset(s.width*.80,s.height*.55),p);
-      c.drawLine(Offset(cx-s.width*.07,s.height*.58),Offset(cx-s.width*.10,s.height*.94),p);
-      c.drawLine(Offset(cx+s.width*.07,s.height*.58),Offset(cx+s.width*.10,s.height*.94),p);
-    }
-    if(muscles){
-      final p=Paint()..color=const Color(0xFFD64A4A).withValues(alpha:.75);
-      if(!back){
-        c.drawOval(Rect.fromCenter(center:Offset(cx-s.width*.09,s.height*.28),width:s.width*.16,height:s.height*.13),p);
-        c.drawOval(Rect.fromCenter(center:Offset(cx+s.width*.09,s.height*.28),width:s.width*.16,height:s.height*.13),p);
-        for(int i=0;i<3;i++){
-          c.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center:Offset(cx-s.width*.045,s.height*(.41+i*.045)),width:s.width*.07,height:s.height*.035),const Radius.circular(8)),p);
-          c.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center:Offset(cx+s.width*.045,s.height*(.41+i*.045)),width:s.width*.07,height:s.height*.035),const Radius.circular(8)),p);
-        }
-      } else {
-        final path=Path()..moveTo(cx,s.height*.18)..lineTo(cx-s.width*.18,s.height*.30)..lineTo(cx-s.width*.12,s.height*.50)..lineTo(cx,s.height*.41)..lineTo(cx+s.width*.12,s.height*.50)..lineTo(cx+s.width*.18,s.height*.30)..close();
-        c.drawPath(path,p);
-      }
-      c.drawOval(Rect.fromCenter(center:Offset(cx-s.width*.08,s.height*.72),width:s.width*.10,height:s.height*.22),p);
-      c.drawOval(Rect.fromCenter(center:Offset(cx+s.width*.08,s.height*.72),width:s.width*.10,height:s.height*.22),p);
-    }
-    if(organs){
-      if(!back){
-        final lung=Paint()..color=const Color(0xFFE99CA7);
-        c.drawOval(Rect.fromCenter(center:Offset(cx-s.width*.085,s.height*.29),width:s.width*.14,height:s.height*.18),lung);
-        c.drawOval(Rect.fromCenter(center:Offset(cx+s.width*.085,s.height*.29),width:s.width*.14,height:s.height*.18),lung);
-        c.drawOval(Rect.fromCenter(center:Offset(cx+s.width*.04,s.height*.315),width:s.width*.10,height:s.height*.10),Paint()..color=const Color(0xFFC44752));
-        c.drawOval(Rect.fromCenter(center:Offset(cx-s.width*.04,s.height*.41),width:s.width*.24,height:s.height*.08),Paint()..color=const Color(0xFF85483F));
-        c.drawOval(Rect.fromCenter(center:Offset(cx+s.width*.07,s.height*.435),width:s.width*.11,height:s.height*.10),Paint()..color=const Color(0xFFD68D72));
-        final gut=Paint()..color=const Color(0xFFD59B75)..style=PaintingStyle.stroke..strokeWidth=8;
-        for(int i=0;i<3;i++){c.drawArc(Rect.fromCenter(center:Offset(cx,s.height*(.50+i*.03)),width:s.width*.22,height:s.height*.06),0,5.4,false,gut);}
-      } else {
-        c.drawOval(Rect.fromCenter(center:Offset(cx-s.width*.07,s.height*.46),width:s.width*.07,height:s.height*.08),Paint()..color=const Color(0xFF965555));
-        c.drawOval(Rect.fromCenter(center:Offset(cx+s.width*.07,s.height*.46),width:s.width*.07,height:s.height*.08),Paint()..color=const Color(0xFF965555));
-      }
-    }
-    if(nerves){
-      final p=Paint()..color=const Color(0xFFF2C94C)..strokeWidth=3..strokeCap=StrokeCap.round;
-      c.drawCircle(Offset(cx,s.height*.075),18,Paint()..color=const Color(0xFFF2C94C).withValues(alpha:.65));
-      c.drawLine(Offset(cx,s.height*.11),Offset(cx,s.height*.60),p);
-      for(final y in <double>[.20,.28,.36,.44,.52]){
-        c.drawLine(Offset(cx,s.height*y),Offset(cx-s.width*.16,s.height*(y+.03)),p);
-        c.drawLine(Offset(cx,s.height*y),Offset(cx+s.width*.16,s.height*(y+.03)),p);
-      }
-    }
-    if(vessels){
-      final a=Paint()..color=const Color(0xFFD74040)..strokeWidth=4..strokeCap=StrokeCap.round;
-      final v=Paint()..color=const Color(0xFF4779D8)..strokeWidth=4..strokeCap=StrokeCap.round;
-      c.drawLine(Offset(cx+5,s.height*.16),Offset(cx+5,s.height*.62),a);
-      c.drawLine(Offset(cx-5,s.height*.16),Offset(cx-5,s.height*.62),v);
-      c.drawLine(Offset(cx,s.height*.29),Offset(s.width*.18,s.height*.54),a);
-      c.drawLine(Offset(cx,s.height*.29),Offset(s.width*.82,s.height*.54),a);
-      c.drawLine(Offset(cx,s.height*.58),Offset(cx-s.width*.10,s.height*.94),a);
-      c.drawLine(Offset(cx,s.height*.58),Offset(cx+s.width*.10,s.height*.94),a);
-    }
+  Widget build(BuildContext context){
+    return Image.network(
+      url,fit:BoxFit.contain,filterQuality:FilterQuality.high,
+      loadingBuilder:(context,child,progress){
+        if(progress==null)return child;
+        return Center(child:Column(mainAxisSize:MainAxisSize.min,children:[
+          const CircularProgressIndicator(),
+          const SizedBox(height:12),
+          Text('Caricamento atlante '+fallbackLabel+'...'),
+        ]));
+      },
+      errorBuilder:(context,error,stack)=>Center(
+        child:Padding(
+          padding:const EdgeInsets.all(24),
+          child:Column(mainAxisSize:MainAxisSize.min,children:[
+            const Icon(Icons.cloud_off,size:52),
+            const SizedBox(height:12),
+            const Text('Immagine anatomica non disponibile',style:TextStyle(fontWeight:FontWeight.w900)),
+            const SizedBox(height:6),
+            const Text('Questa build usa tavole anatomiche Wikimedia Commons e richiede una connessione per il caricamento.',textAlign:TextAlign.center),
+          ]),
+        ),
+      ),
+    );
   }
-  @override bool shouldRepaint(covariant BodyPainter oldDelegate)=>true;
+}
+
+class _AtlasHotspotWidget extends StatelessWidget {
+  final AtlasHotspot hotspot;
+  final bool showLabel;
+  const _AtlasHotspotWidget({required this.hotspot,required this.showLabel});
+  @override
+  Widget build(BuildContext context){
+    return Align(
+      alignment:Alignment(hotspot.x*2-1,hotspot.y*2-1),
+      child:GestureDetector(
+        onTap:()=>showModalBottomSheet<void>(
+          context:context,showDragHandle:true,
+          builder:(sheet)=>Padding(
+            padding:const EdgeInsets.fromLTRB(22,4,22,28),
+            child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
+              Text(hotspot.emoji,style:const TextStyle(fontSize:46)),
+              const SizedBox(height:8),
+              Text(hotspot.name,style:const TextStyle(fontSize:25,fontWeight:FontWeight.w900)),
+              const SizedBox(height:4),
+              Text(hotspot.subtitle,style:TextStyle(color:Theme.of(context).colorScheme.primary,fontWeight:FontWeight.w800)),
+              const SizedBox(height:16),
+              const Text('Struttura selezionata nell’Atlante anatomico. Questa vista serve come punto di ingresso per approfondimenti, quiz e percorso macro→micro.',style:TextStyle(height:1.45)),
+            ]),
+          ),
+        ),
+        child:Column(mainAxisSize:MainAxisSize.min,children:[
+          Container(
+            width:30,height:30,alignment:Alignment.center,
+            decoration:BoxDecoration(color:Colors.white,shape:BoxShape.circle,border:Border.all(color:const Color(0xFF6755E7),width:2),boxShadow:const [BoxShadow(color:Color(0x33000000),blurRadius:6)]),
+            child:Text(hotspot.emoji,style:const TextStyle(fontSize:14)),
+          ),
+          if(showLabel)
+            Container(
+              constraints:const BoxConstraints(maxWidth:110),
+              margin:const EdgeInsets.only(top:3),
+              padding:const EdgeInsets.symmetric(horizontal:6,vertical:3),
+              decoration:BoxDecoration(color:Colors.white.withValues(alpha:.92),borderRadius:BorderRadius.circular(8)),
+              child:Text(hotspot.name,textAlign:TextAlign.center,style:const TextStyle(fontSize:9,fontWeight:FontWeight.w900)),
+            ),
+        ]),
+      ),
+    );
+  }
 }
 
 class StudyPage extends StatefulWidget {
