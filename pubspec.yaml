@@ -1,0 +1,19 @@
+name: edu_01
+description: Atlante interattivo del corpo umano
+publish_to: "none"
+version: 0.18.0+18
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
