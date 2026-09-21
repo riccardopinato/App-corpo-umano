@@ -263,7 +263,8 @@ class LearningPathStore extends ChangeNotifier {
 
 class LearningPathPage extends StatefulWidget {
   final StudyProgressStore studyStore;
-  const LearningPathPage({super.key,required this.studyStore});
+  final void Function(String region)? openAtlasRegion;
+  const LearningPathPage({super.key,required this.studyStore,this.openAtlasRegion});
   @override State<LearningPathPage> createState()=>_LearningPathPageState();
 }
 
@@ -322,7 +323,11 @@ class _LearningPathPageState extends State<LearningPathPage> {
               title:Text(next.title,style:const TextStyle(fontWeight:FontWeight.w900)),
               subtitle:Text(next.level.label+' · '+next.system),
               trailing:const Icon(Icons.play_circle_outline),
-              onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>LearningLessonPage(lesson:next,onPassed:()=>pathStore.complete(next.id)))),
+              onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>LearningLessonPage(
+                lesson:next,
+                onPassed:()=>pathStore.complete(next.id),
+                openAtlasRegion:widget.openAtlasRegion==null?null:()=>widget.openAtlasRegion!(_regionFor(next)),
+              ))),
             )),
           ],
           if(weak!=null)...[
@@ -351,7 +356,11 @@ class _LearningPathPageState extends State<LearningPathPage> {
                   subtitle:Text(lesson.system+' · '+lesson.summary,maxLines:2,overflow:TextOverflow.ellipsis),
                   trailing:Icon(complete?Icons.check_circle:unlocked?Icons.chevron_right:Icons.lock_outline),
                   enabled:unlocked,
-                  onTap:unlocked?()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>LearningLessonPage(lesson:lesson,onPassed:()=>pathStore.complete(lesson.id)))):null,
+                  onTap:unlocked?()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>LearningLessonPage(
+                    lesson:lesson,
+                    onPassed:()=>pathStore.complete(lesson.id),
+                    openAtlasRegion:widget.openAtlasRegion==null?null:()=>widget.openAtlasRegion!(_regionFor(lesson)),
+                  ))):null,
                 ),
               );
             }),
@@ -363,10 +372,21 @@ class _LearningPathPageState extends State<LearningPathPage> {
   }
 }
 
+String _regionFor(LearningLesson lesson){
+  final s=lesson.system.toLowerCase();
+  if(s.contains('nerv')) return 'Testa';
+  if(s.contains('resp')||s.contains('cardio')) return 'Torace';
+  if(s.contains('diger')||s.contains('urin')||s.contains('endocr')) return 'Addome';
+  if(s.contains('scheletr')||s.contains('muscol')) return 'Arto superiore';
+  if(s.contains('immun')) return 'Torace';
+  return 'Intero';
+}
+
 class LearningLessonPage extends StatefulWidget {
   final LearningLesson lesson;
   final Future<void> Function() onPassed;
-  const LearningLessonPage({super.key,required this.lesson,required this.onPassed});
+  final VoidCallback? openAtlasRegion;
+  const LearningLessonPage({super.key,required this.lesson,required this.onPassed,this.openAtlasRegion});
   @override State<LearningLessonPage> createState()=>_LearningLessonPageState();
 }
 
@@ -405,6 +425,17 @@ class _LearningLessonPageState extends State<LearningLessonPage> {
               title:Text(e.value,style:const TextStyle(fontWeight:FontWeight.w700)),
             ))),
             const SizedBox(height:18),
+            if(widget.openAtlasRegion!=null)...[
+              OutlinedButton.icon(
+                onPressed:widget.openAtlasRegion,
+                icon:const Icon(Icons.accessibility_new_outlined),
+                label:const Padding(
+                  padding:EdgeInsets.symmetric(vertical:12),
+                  child:Text('Apri la regione nell’Atlante'),
+                ),
+              ),
+              const SizedBox(height:8),
+            ],
             FilledButton.icon(
               onPressed:()=>setState(()=>stage=1),
               icon:const Icon(Icons.quiz_outlined),
