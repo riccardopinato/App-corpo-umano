@@ -60,6 +60,9 @@ class StudyProgressStore extends ChangeNotifier {
   final Map<String,int> intervalDays={};
   final Map<String,int> dueMillis={};
   final Map<String,int> dailyCount={};
+  final Map<String,int> atlasRegionAttempts={};
+  final Map<String,int> atlasRegionCorrect={};
+  final Map<String,int> atlasStructureErrors={};
   final List<int> examScores=[];
 
   int xp=0;
@@ -78,6 +81,9 @@ class StudyProgressStore extends ChangeNotifier {
         _readMap(data['intervalDays'],intervalDays);
         _readMap(data['dueMillis'],dueMillis);
         _readMap(data['dailyCount'],dailyCount);
+        _readMap(data['atlasRegionAttempts'],atlasRegionAttempts);
+        _readMap(data['atlasRegionCorrect'],atlasRegionCorrect);
+        _readMap(data['atlasStructureErrors'],atlasStructureErrors);
         xp=(data['xp'] as num?)?.toInt()??0;
         streak=(data['streak'] as num?)?.toInt()??0;
         lastStudyDay=data['lastStudyDay']?.toString()??'';
@@ -127,6 +133,44 @@ class StudyProgressStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> recordAtlasAnswer(String region,String structure,bool ok) async {
+    atlasRegionAttempts[region]=(atlasRegionAttempts[region]??0)+1;
+    if(ok){
+      atlasRegionCorrect[region]=(atlasRegionCorrect[region]??0)+1;
+    }else{
+      atlasStructureErrors[structure]=(atlasStructureErrors[structure]??0)+1;
+    }
+    xp+=ok?8:2;
+    _touchStudyDay();
+    final day=_dayKey(DateTime.now());
+    dailyCount[day]=(dailyCount[day]??0)+1;
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> clearAtlasError(String structure) async {
+    atlasStructureErrors.remove(structure);
+    await _save();
+    notifyListeners();
+  }
+
+  int atlasMasteryFor(String region){
+    final a=atlasRegionAttempts[region]??0;
+    if(a==0)return 0;
+    return ((atlasRegionCorrect[region]??0)*100/a).round();
+  }
+
+  List<String> get atlasRegions {
+    final r=atlasRegionAttempts.keys.toList()..sort();
+    return r;
+  }
+
+  List<String> get atlasErrorNames {
+    final items=atlasStructureErrors.entries.toList()
+      ..sort((a,b)=>b.value.compareTo(a.value));
+    return items.map((e)=>e.key).toList();
+  }
+
   Future<void> recordExam(int percent) async {
     examScores.insert(0,percent);
     if(examScores.length>20)examScores.removeRange(20,examScores.length);
@@ -137,7 +181,8 @@ class StudyProgressStore extends ChangeNotifier {
   }
 
   Future<void> reset() async {
-    attempts.clear();correct.clear();intervalDays.clear();dueMillis.clear();dailyCount.clear();examScores.clear();
+    attempts.clear();correct.clear();intervalDays.clear();dueMillis.clear();dailyCount.clear();
+    atlasRegionAttempts.clear();atlasRegionCorrect.clear();atlasStructureErrors.clear();examScores.clear();
     xp=0;streak=0;lastStudyDay='';
     await _save();
     notifyListeners();
@@ -147,7 +192,11 @@ class StudyProgressStore extends ChangeNotifier {
     final prefs=await SharedPreferences.getInstance();
     await prefs.setString(_key,jsonEncode({
       'attempts':attempts,'correct':correct,'intervalDays':intervalDays,'dueMillis':dueMillis,
-      'dailyCount':dailyCount,'xp':xp,'streak':streak,'lastStudyDay':lastStudyDay,'examScores':examScores,
+      'dailyCount':dailyCount,
+      'atlasRegionAttempts':atlasRegionAttempts,
+      'atlasRegionCorrect':atlasRegionCorrect,
+      'atlasStructureErrors':atlasStructureErrors,
+      'xp':xp,'streak':streak,'lastStudyDay':lastStudyDay,'examScores':examScores,
     }));
   }
 
@@ -234,6 +283,12 @@ class SmartStudyV2Page extends StatelessWidget {
           const SizedBox(height:8),
           ActionCardV2(emoji:'🧠',title:'Flashcard intelligenti',subtitle:'Prima errori e categorie più deboli',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>SmartFlashcardsPage(store:store)))),
           const SizedBox(height:8),
+          ActionCardV2(emoji:'⭐',title:'Flashcard preferiti Atlante',subtitle:'Trasforma automaticamente le strutture salvate nell’Atlante in flashcard',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AtlasFavoriteFlashcardsPage()))),
+          if(store.atlasErrorNames.isNotEmpty)...[
+            const SizedBox(height:8),
+            ActionCardV2(emoji:'🗺️',title:'Errori Atlante',subtitle:store.atlasErrorNames.length.toString()+' strutture da ripassare',badge:'Atlas',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>AtlasErrorNotebookPage(store:store)))),
+          ],
+          const SizedBox(height:8),
           ActionCardV2(emoji:'🎓',title:'Esame 20',subtitle:'20 domande · risultati solo alla fine',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>StudyQuizSession(store:store,questions:_randomQuestions(20),title:'Esame 20',examMode:true)))),
           const SizedBox(height:8),
           ActionCardV2(emoji:'📊',title:'Mastery',subtitle:'Preparazione per area anatomica',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>MasteryV2Page(store:store)))),
@@ -248,6 +303,20 @@ class SmartStudyV2Page extends StatelessWidget {
             trailing:Text(store.masteryFor(c).toString()+'%',style:const TextStyle(fontWeight:FontWeight.w900)),
             onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>StudyQuizSession(store:store,questions:_randomQuestions(10,category:c),title:c))),
           ))),
+          if(store.atlasRegions.isNotEmpty)...[
+            const SizedBox(height:18),
+            const Text('Mastery Atlante',style:TextStyle(fontSize:21,fontWeight:FontWeight.w900)),
+            const SizedBox(height:8),
+            ...store.atlasRegions.map((region)=>Card(
+              margin:const EdgeInsets.only(bottom:7),
+              child:ListTile(
+                leading:const Icon(Icons.pin_drop_outlined),
+                title:Text(region,style:const TextStyle(fontWeight:FontWeight.w800)),
+                subtitle:LinearProgressIndicator(value:store.atlasMasteryFor(region)/100,minHeight:6,borderRadius:BorderRadius.circular(20)),
+                trailing:Text(store.atlasMasteryFor(region).toString()+'%',style:const TextStyle(fontWeight:FontWeight.w900)),
+              ),
+            )),
+          ],
         ]),
       );
     },
@@ -442,5 +511,138 @@ class MasteryV2Page extends StatelessWidget {
         LinearProgressIndicator(value:store.masteryFor(c)/100,minHeight:8,borderRadius:BorderRadius.circular(20)),
       ])))),
     ])),
+  );
+}
+
+
+class AtlasFavoriteFlashcardsPage extends StatefulWidget {
+  const AtlasFavoriteFlashcardsPage({super.key});
+  @override
+  State<AtlasFavoriteFlashcardsPage> createState()=>_AtlasFavoriteFlashcardsPageState();
+}
+
+class _AtlasFavoriteFlashcardsPageState extends State<AtlasFavoriteFlashcardsPage> {
+  List<String> favorites=[];
+  int index=0;
+  bool revealed=false;
+
+  @override
+  void initState(){
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs=await SharedPreferences.getInstance();
+    final list=prefs.getStringList('edu01_atlas_favorites_v1')??const <String>[];
+    if(!mounted)return;
+    setState(()=>favorites=list);
+  }
+
+  @override
+  Widget build(BuildContext context){
+    if(favorites.isEmpty){
+      return Scaffold(
+        appBar:AppBar(title:const Text('Flashcard Atlante')),
+        body:const Center(child:Padding(
+          padding:EdgeInsets.all(28),
+          child:Text('Aggiungi prima alcune strutture ai preferiti nell’Atlante.',textAlign:TextAlign.center),
+        )),
+      );
+    }
+    final name=favorites[index%favorites.length];
+    return Scaffold(
+      appBar:AppBar(title:const Text('Flashcard Atlante')),
+      body:Padding(
+        padding:const EdgeInsets.all(20),
+        child:Column(children:[
+          Text((index+1).toString()+'/'+favorites.length.toString(),style:const TextStyle(fontWeight:FontWeight.w900)),
+          const SizedBox(height:12),
+          Expanded(child:Center(child:GestureDetector(
+            onTap:()=>setState(()=>revealed=!revealed),
+            child:AnimatedContainer(
+              duration:const Duration(milliseconds:180),
+              width:double.infinity,
+              padding:const EdgeInsets.all(26),
+              decoration:BoxDecoration(
+                color:revealed?Theme.of(context).colorScheme.secondaryContainer:Theme.of(context).colorScheme.primaryContainer,
+                borderRadius:BorderRadius.circular(30),
+              ),
+              child:Column(mainAxisSize:MainAxisSize.min,children:[
+                Text(revealed?'📌':'⭐',style:const TextStyle(fontSize:58)),
+                const SizedBox(height:16),
+                Text(revealed
+                    ?'Riconosci questa struttura nell’Atlante e ripassa sistema, regione e funzione.'
+                    :name,
+                  textAlign:TextAlign.center,
+                  style:const TextStyle(fontSize:24,fontWeight:FontWeight.w900,height:1.35),
+                ),
+                const SizedBox(height:12),
+                Text(revealed?'Tocca per tornare al nome':'Tocca per mostrare il compito',style:const TextStyle(fontSize:12)),
+              ]),
+            ),
+          ))),
+          Row(children:[
+            Expanded(child:OutlinedButton(
+              onPressed:index>0?()=>setState((){index--;revealed=false;}):null,
+              child:const Text('Indietro'),
+            )),
+            const SizedBox(width:8),
+            Expanded(child:FilledButton(
+              onPressed:(){
+                if(index>=favorites.length-1){
+                  Navigator.pop(context);
+                }else{
+                  setState((){index++;revealed=false;});
+                }
+              },
+              child:Text(index>=favorites.length-1?'Termina':'Prossima'),
+            )),
+          ]),
+        ]),
+      ),
+    );
+  }
+}
+
+class AtlasErrorNotebookPage extends StatelessWidget {
+  final StudyProgressStore store;
+  const AtlasErrorNotebookPage({super.key,required this.store});
+
+  @override
+  Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:const Text('Errori Atlante')),
+    body:AnimatedBuilder(
+      animation:store,
+      builder:(context,_) {
+        final items=store.atlasErrorNames;
+        if(items.isEmpty){
+          return const Center(child:Text('Nessun errore Atlante da ripassare.'));
+        }
+        return ListView(
+          padding:const EdgeInsets.fromLTRB(18,6,18,30),
+          children:[
+            Container(
+              padding:const EdgeInsets.all(20),
+              decoration:BoxDecoration(color:Theme.of(context).colorScheme.primaryContainer,borderRadius:BorderRadius.circular(26)),
+              child:const Text('🗺️ Strutture sbagliate durante “Trova nell’Atlante”. Ripassale e rimuovile quando ti senti sicuro.',style:TextStyle(fontWeight:FontWeight.w700,height:1.4)),
+            ),
+            const SizedBox(height:14),
+            ...items.map((name)=>Card(
+              child:ListTile(
+                leading:const Icon(Icons.location_searching),
+                title:Text(name,style:const TextStyle(fontWeight:FontWeight.w900)),
+                subtitle:Text('Errori: '+(store.atlasStructureErrors[name]??0).toString()),
+                trailing:IconButton(
+                  tooltip:'Segna come ripassato',
+                  onPressed:()=>store.clearAtlasError(name),
+                  icon:const Icon(Icons.check_circle_outline),
+                ),
+              ),
+            )),
+          ],
+        );
+      },
+    ),
   );
 }
