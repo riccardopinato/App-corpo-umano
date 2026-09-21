@@ -5,6 +5,8 @@ import 'deep_dive.dart';
 import 'games_v2.dart';
 import 'histology.dart';
 import 'smart_study.dart';
+import 'learning_path.dart';
+import 'exam_pro.dart';
 
 class ReleaseCenterPage extends StatelessWidget {
   final StudyProgressStore studyStore;
@@ -26,8 +28,8 @@ class ReleaseCenterPage extends StatelessWidget {
             Text('✅',style:TextStyle(fontSize:52)),
             SizedBox(width:14),
             Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-              Text('edu_01 v0.25.0',style:TextStyle(color:Colors.white,fontSize:24,fontWeight:FontWeight.w900)),
-              Text('Release Candidate · Android',style:TextStyle(color:Colors.white70)),
+              Text('edu_01 v0.28.0',style:TextStyle(color:Colors.white,fontSize:24,fontWeight:FontWeight.w900)),
+              Text('Atlas Pro · Learning Path · Exam Pro',style:TextStyle(color:Colors.white70)),
             ])),
           ]),
         ),
@@ -40,6 +42,8 @@ class ReleaseCenterPage extends StatelessWidget {
         _ReleaseMetric(icon:'📚',label:'Catalogo espanso',value:expandedContent.length.toString()+' voci'),
         _ReleaseMetric(icon:'🧠',label:'Smart Study',value:studyQuestionBank.length.toString()+' domande'),
         _ReleaseMetric(icon:'🎮',label:'Anatomy Games',value:'4 modalità'),
+        _ReleaseMetric(icon:'🧭',label:'Learning Path',value:learningLessons.length.toString()+' lezioni'),
+        _ReleaseMetric(icon:'🎓',label:'Exam Pro',value:ExamQuestionFactory.buildPool().length.toString()+' domande'),
         const SizedBox(height:20),
         const Text('Qualità e accessibilità',style:TextStyle(fontSize:21,fontWeight:FontWeight.w900)),
         const SizedBox(height:8),
@@ -47,6 +51,8 @@ class ReleaseCenterPage extends StatelessWidget {
         const _CheckTile(title:'Navigazione Material 3',subtitle:'Cinque sezioni principali con layout coerente.'),
         const _CheckTile(title:'Testo scalabile',subtitle:'La UI usa componenti Flutter che rispettano le impostazioni di scala testo del sistema.'),
         const _CheckTile(title:'Persistenza studio',subtitle:'XP, streak, errori e ripasso vengono conservati localmente.'),
+        const _CheckTile(title:'Learning Path persistente',subtitle:'Le lezioni completate e i prerequisiti restano memorizzati sul dispositivo.'),
+        const _CheckTile(title:'Exam Pro 100',subtitle:'Il pool dinamico genera oltre 100 quesiti da Smart Study, istologia e catalogo anatomico.'),
         const _CheckTile(title:'Contenuti separati dal core UI',subtitle:'Moduli indipendenti per istologia, deep dive, studio, giochi e cataloghi.'),
         const SizedBox(height:20),
         const Text('Dati di studio',style:TextStyle(fontSize:21,fontWeight:FontWeight.w900)),
