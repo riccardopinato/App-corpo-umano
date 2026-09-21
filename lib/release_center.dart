@@ -28,8 +28,8 @@ class ReleaseCenterPage extends StatelessWidget {
             Text('✅',style:TextStyle(fontSize:52)),
             SizedBox(width:14),
             Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-              Text('edu_01 v0.28.0',style:TextStyle(color:Colors.white,fontSize:24,fontWeight:FontWeight.w900)),
-              Text('Atlas Pro · Learning Path · Exam Pro',style:TextStyle(color:Colors.white70)),
+              Text('edu_01 v0.29.0',style:TextStyle(color:Colors.white,fontSize:24,fontWeight:FontWeight.w900)),
+              Text('Zero-Loss Size Optimization · Release build',style:TextStyle(color:Colors.white70)),
             ])),
           ]),
         ),
@@ -54,6 +54,7 @@ class ReleaseCenterPage extends StatelessWidget {
         const _CheckTile(title:'Learning Path persistente',subtitle:'Le lezioni completate e i prerequisiti restano memorizzati sul dispositivo.'),
         const _CheckTile(title:'Exam Pro 100',subtitle:'Il pool dinamico genera oltre 100 quesiti da Smart Study, istologia e catalogo anatomico.'),
         const _CheckTile(title:'Contenuti separati dal core UI',subtitle:'Moduli indipendenti per istologia, deep dive, studio, giochi e cataloghi.'),
+        const _CheckTile(title:'Release ottimizzata',subtitle:'Stessa app e stessi asset, ma compilazione release con tree-shaking, stripping e pacchetti per ABI.'),
         const SizedBox(height:20),
         const Text('Dati di studio',style:TextStyle(fontSize:21,fontWeight:FontWeight.w900)),
         const SizedBox(height:8),
