@@ -110,11 +110,11 @@ class _MainShellState extends State<MainShell> {
 
   String _regionFor(AtlasHotspot h){
     if(h.y<.20)return 'Testa';
+    if(h.y>=.68)return 'Arto inferiore';
+    if((h.x<.34||h.x>.66)&&h.y<.68)return 'Arto superiore';
     if(h.y<.43)return 'Torace';
     if(h.y<.60)return 'Addome';
     if(h.y<.68)return 'Pelvi';
-    if(h.x<.32&&h.y<.67)return 'Arto superiore';
-    if(h.y>=.68)return 'Arto inferiore';
     return 'Intero';
   }
 
@@ -503,15 +503,15 @@ class _AtlasPageState extends State<AtlasPage> {
         AtlasHotspot('Metatarso','5 ossa per piede','🦶',.40,.975),
         AtlasHotspot('Frontale','Cranio','🦴',.50,.065),
         AtlasHotspot('Parietale','Cranio','🦴',.47,.075),
-        AtlasHotspot('Temporale','Cranio','🦴',.44,.105),
+        AtlasHotspot('Osso temporale','Cranio','🦴',.44,.105),
         AtlasHotspot('Occipitale','Cranio','🦴',.50,.115),
         AtlasHotspot('Mascella','Cranio viscerale','🦴',.50,.118),
         AtlasHotspot('Scafoide','Carpo','🦴',.125,.555),
         AtlasHotspot('Semilunare','Carpo','🦴',.135,.558),
         AtlasHotspot('Piramidale','Carpo','🦴',.145,.56),
         AtlasHotspot('Pisiforme','Carpo','🦴',.152,.562),
-        AtlasHotspot('Trapezio','Carpo','🦴',.118,.57),
-        AtlasHotspot('Trapezoide','Carpo','🦴',.128,.572),
+        AtlasHotspot('Osso trapezio','Carpo','🦴',.118,.57),
+        AtlasHotspot('Osso trapezoide','Carpo','🦴',.128,.572),
         AtlasHotspot('Capitato','Carpo','🦴',.138,.574),
         AtlasHotspot('Uncinato','Carpo','🦴',.148,.576),
         AtlasHotspot('Astragalo','Tarso','🦴',.405,.945),
@@ -546,7 +546,7 @@ class _AtlasPageState extends State<AtlasPage> {
         AtlasHotspot('Ischiocrurali','Coscia posteriore','💪',.76,.70),
         AtlasHotspot('Gastrocnemio','Polpaccio','💪',.76,.86),
         AtlasHotspot('Massetere','Testa','💪',.23,.125),
-        AtlasHotspot('Temporale','Testa','💪',.25,.10),
+        AtlasHotspot('Muscolo temporale','Testa','💪',.25,.10),
         AtlasHotspot('Dentato anteriore','Torace laterale','💪',.18,.34),
         AtlasHotspot('Brachiale','Braccio anteriore','💪',.16,.39),
         AtlasHotspot('Pronatore rotondo','Avambraccio','💪',.14,.445),
