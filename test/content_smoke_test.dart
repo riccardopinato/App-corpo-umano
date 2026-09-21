@@ -3,6 +3,8 @@ import 'package:edu_01/content_expansion.dart';
 import 'package:edu_01/deep_dive.dart';
 import 'package:edu_01/games_v2.dart';
 import 'package:edu_01/histology.dart';
+import 'package:edu_01/learning_path.dart';
+import 'package:edu_01/exam_pro.dart';
 import 'package:edu_01/smart_study.dart';
 
 void main() {
@@ -13,6 +15,8 @@ void main() {
     expect(studyQuestionBank.length, greaterThanOrEqualTo(36));
     expect(gameItems.length, greaterThanOrEqualTo(30));
     expect(expandedContent.length, greaterThanOrEqualTo(90));
+    expect(learningLessons.length, greaterThanOrEqualTo(18));
+    expect(ExamQuestionFactory.buildPool().length, greaterThanOrEqualTo(100));
   });
 
   test('expanded catalog includes all major v0.24 families', () {
