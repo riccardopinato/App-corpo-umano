@@ -108,78 +108,6 @@ class _MainShellState extends State<MainShell> {
     if (mounted) setState(() {});
   }
 
-  String _regionFor(AtlasHotspot h){
-    if(h.y<.20)return 'Testa';
-    if(h.y>=.68)return 'Arto inferiore';
-    if((h.x<.34||h.x>.66)&&h.y<.68)return 'Arto superiore';
-    if(h.y<.43)return 'Torace';
-    if(h.y<.60)return 'Addome';
-    if(h.y<.68)return 'Pelvi';
-    return 'Intero';
-  }
-
-  void _applyRegion(String region){
-    setState(()=>activeRegion=region);
-    switch(region){
-      case 'Testa':
-        _quickZoom(.50,.12,3.2);
-        break;
-      case 'Torace':
-        _quickZoom(.50,.33,2.7);
-        break;
-      case 'Addome':
-        _quickZoom(.50,.53,2.8);
-        break;
-      case 'Pelvi':
-        _quickZoom(.50,.62,3.0);
-        break;
-      case 'Mano':
-        _quickZoom(.13,.58,4.2);
-        break;
-      case 'Piede':
-        _quickZoom(.41,.95,4.0);
-        break;
-      case 'Arto superiore':
-        _quickZoom(.24,.42,2.8);
-        break;
-      case 'Arto inferiore':
-        _quickZoom(.44,.78,2.8);
-        break;
-      default:
-        _transform.value=Matrix4.identity();
-    }
-  }
-
-  void _startStudy(){
-    final pool=layers[layerIndex].hotspots;
-    if(pool.isEmpty)return;
-    setState((){
-      studyMode=true;
-      showLabels=false;
-      isolatedName=null;
-      studyTarget=pool[Random().nextInt(pool.length)];
-    });
-  }
-
-  Future<void> _answerStudy(AtlasHotspot tapped) async {
-    final target=studyTarget;
-    if(!studyMode||target==null)return;
-    final ok=tapped.name==target.name;
-    final region=_regionFor(target);
-    await widget.studyStore.recordAtlasAnswer(region,target.name,ok);
-    if(!mounted)return;
-    setState((){
-      studyRounds++;
-      if(ok)studyScore++;
-      final pool=layers[layerIndex].hotspots;
-      studyTarget=pool[Random().nextInt(pool.length)];
-    });
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      duration:const Duration(milliseconds:650),
-      content:Text(ok?'Corretto ✅':'Era: '+target.name),
-    ));
-  }
-
   @override
   void dispose() {
     studyStore.removeListener(_onStudyChange);
@@ -624,6 +552,80 @@ class _AtlasPageState extends State<AtlasPage> {
       ],
     ),
   ];
+
+
+  String _regionFor(AtlasHotspot h){
+    if(h.y<.20)return 'Testa';
+    if(h.y>=.68)return 'Arto inferiore';
+    if((h.x<.34||h.x>.66)&&h.y<.68)return 'Arto superiore';
+    if(h.y<.43)return 'Torace';
+    if(h.y<.60)return 'Addome';
+    if(h.y<.68)return 'Pelvi';
+    return 'Intero';
+  }
+
+  void _applyRegion(String region){
+    setState(()=>activeRegion=region);
+    switch(region){
+      case 'Testa':
+        _quickZoom(.50,.12,3.2);
+        break;
+      case 'Torace':
+        _quickZoom(.50,.33,2.7);
+        break;
+      case 'Addome':
+        _quickZoom(.50,.53,2.8);
+        break;
+      case 'Pelvi':
+        _quickZoom(.50,.62,3.0);
+        break;
+      case 'Mano':
+        _quickZoom(.13,.58,4.2);
+        break;
+      case 'Piede':
+        _quickZoom(.41,.95,4.0);
+        break;
+      case 'Arto superiore':
+        _quickZoom(.24,.42,2.8);
+        break;
+      case 'Arto inferiore':
+        _quickZoom(.44,.78,2.8);
+        break;
+      default:
+        _transform.value=Matrix4.identity();
+    }
+  }
+
+  void _startStudy(){
+    final pool=layers[layerIndex].hotspots;
+    if(pool.isEmpty)return;
+    setState((){
+      studyMode=true;
+      showLabels=false;
+      isolatedName=null;
+      studyTarget=pool[Random().nextInt(pool.length)];
+    });
+  }
+
+  Future<void> _answerStudy(AtlasHotspot tapped) async {
+    final target=studyTarget;
+    if(!studyMode||target==null)return;
+    final ok=tapped.name==target.name;
+    final region=_regionFor(target);
+    await widget.studyStore.recordAtlasAnswer(region,target.name,ok);
+    if(!mounted)return;
+    setState((){
+      studyRounds++;
+      if(ok)studyScore++;
+      final pool=layers[layerIndex].hotspots;
+      studyTarget=pool[Random().nextInt(pool.length)];
+    });
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      duration:const Duration(milliseconds:650),
+      content:Text(ok?'Corretto ✅':'Era: '+target.name),
+    ));
+  }
+
 
   @override
   void dispose() {
