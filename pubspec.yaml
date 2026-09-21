@@ -1,7 +1,7 @@
 name: edu_01
 description: Atlante interattivo del corpo umano
 publish_to: "none"
-version: 0.25.0+25
+version: 0.28.0+28
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
