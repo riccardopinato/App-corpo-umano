@@ -44,7 +44,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: edu_01-v0.19.0-offline-atlas-apk
+          name: edu_01-v0.22.0-education-suite-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 30
