@@ -1,6 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'histology.dart';
+import 'deep_dive.dart';
+import 'smart_study.dart';
 
 void main() => runApp(const HumanBodyApp());
 
@@ -85,15 +88,35 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int tab = 0, answered = 0, correct = 0;
+  int tab = 0;
+  final StudyProgressStore studyStore = StudyProgressStore();
+
+  @override
+  void initState() {
+    super.initState();
+    studyStore.addListener(_onStudyChange);
+    studyStore.initialize();
+  }
+
+  void _onStudyChange() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    studyStore.removeListener(_onStudyChange);
+    studyStore.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
-      TodayPage(answered: answered, correct: correct, openStudy: () => setState(() => tab = 3)),
+      TodayPage(answered: studyStore.totalAnswers, correct: studyStore.totalCorrect, openStudy: () => setState(() => tab = 3)),
       const LearnPage(),
       const AtlasPage(),
-      StudyPage(answered: answered, correct: correct, onAnswer: (ok) => setState(() { answered++; if (ok) correct++; })),
-      ProfilePage(answered: answered, correct: correct),
+      SmartStudyV2Page(store: studyStore),
+      ProfilePage(answered: studyStore.totalAnswers, correct: studyStore.totalCorrect),
     ];
     return Scaffold(
       body: IndexedStack(index: tab, children: pages),
@@ -174,6 +197,10 @@ class LearnPage extends StatelessWidget {
           FeatureCard(color:const Color(0xFFFFE5E4),emoji:'🎮',title:'Anatomy Games',subtitle:'Impara giocando con il database anatomico',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const GamesPage()))),
           const SizedBox(height:10),
           FeatureCard(color:const Color(0xFFE8F0FF),emoji:'🧬',title:'Anatomia avanzata',subtitle:'Cranio, colonna, mano, piede, legamenti, nervi e vasi',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AdvancedPage()))),
+          const SizedBox(height:10),
+          FeatureCard(color:const Color(0xFFE5F7F2),emoji:'🔬',title:'Istologia & cellule',subtitle:'Tessuti, cellule, organelli e percorsi corpo → organo → cellula',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const HistologyHubPage()))),
+          const SizedBox(height:10),
+          FeatureCard(color:const Color(0xFFF0E8FF),emoji:'🔎',title:'Deep Dive anatomico',subtitle:'Entra dentro cuore, cervello, polmoni, reni, fegato e altri organi',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const DeepDiveHubPage()))),
           const SizedBox(height:24),
           const Text('11 sistemi del corpo',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),
           const SizedBox(height:10),
@@ -606,7 +633,12 @@ class _AtlasPageState extends State<AtlasPage> {
                 Expanded(child:OutlinedButton.icon(
                   onPressed:(){
                     Navigator.pop(sheet);
-                    Navigator.push(context,MaterialPageRoute(builder:(_)=>const AdvancedPage()));
+                    final deep=DeepDiveRegistry.find(h.name);
+                    if(deep!=null){
+                      Navigator.push(context,MaterialPageRoute(builder:(_)=>DeepDiveDetailPage(root:deep)));
+                    }else{
+                      Navigator.push(context,MaterialPageRoute(builder:(_)=>const AdvancedPage()));
+                    }
                   },
                   icon:const Icon(Icons.menu_book_outlined),
                   label:const Text('Approfondisci'),
@@ -806,7 +838,7 @@ class ProfilePage extends StatelessWidget {
               CircleAvatar(radius:34,child:Text('18',style:TextStyle(fontSize:24,fontWeight:FontWeight.w900))),
               SizedBox(width:16),
               Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-                Text('edu_01 · v0.19.0',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),
+                Text('edu_01 · v0.22.0',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),
                 Text('Atlante umano interattivo'),
               ])),
             ]),
@@ -826,7 +858,7 @@ class ProfilePage extends StatelessWidget {
             ],
           ),
           const SizedBox(height:20),
-          const Card(child:ListTile(leading:Icon(Icons.info_outline),title:Text('Build consolidata',style:TextStyle(fontWeight:FontWeight.w900)),subtitle:Text('edu_01 0.19.0+19 · Android · Atlante offline'))),
+          const Card(child:ListTile(leading:Icon(Icons.info_outline),title:Text('Build consolidata',style:TextStyle(fontWeight:FontWeight.w900)),subtitle:Text('edu_01 0.22.0+22 · Android · Histology + Deep Dive + Smart Study 2.0'))),
         ],
       ),
     );
@@ -931,7 +963,7 @@ class _AdvancedPageState extends State<AdvancedPage> {
                 const SizedBox(height:10),
                 Text(e['s']!,style:const TextStyle(height:1.5)),
                 const SizedBox(height:12),
-                const Text('Catalogo avanzato v0.18.0 · collegato a Atlante e Smart Study.',style:TextStyle(fontWeight:FontWeight.w700)),
+                const Text('Catalogo avanzato v0.22 · collegato ad Atlante, Deep Dive e Smart Study 2.0.',style:TextStyle(fontWeight:FontWeight.w700)),
               ]),
             )),
           ))).toList(),
