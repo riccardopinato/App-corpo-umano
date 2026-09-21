@@ -38,13 +38,21 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Static analysis
+        run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
+
+      - name: Run content smoke tests
+        run: |
+          rm -f test/widget_test.dart
+          flutter test test/content_smoke_test.dart
+
       - name: Build debug APK
         run: flutter build apk --debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: edu_01-v0.22.0-education-suite-apk
+          name: edu_01-v0.25.0-release-candidate-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 30
