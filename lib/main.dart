@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 void main() => runApp(const HumanBodyApp());
 
@@ -239,250 +240,448 @@ class SystemDetail extends StatelessWidget {
 
 class AtlasPage extends StatefulWidget {
   const AtlasPage({super.key});
-  @override State<AtlasPage> createState()=>_AtlasPageState();
+  @override
+  State<AtlasPage> createState() => _AtlasPageState();
 }
 
 class AtlasLayerData {
-  final String id, label, emoji, imageUrl, credit;
+  final String id, label, emoji, assetPath, credit;
+  final double aspectRatio;
   final List<AtlasHotspot> hotspots;
-  const AtlasLayerData({required this.id,required this.label,required this.emoji,required this.imageUrl,required this.credit,required this.hotspots});
+  const AtlasLayerData({
+    required this.id,
+    required this.label,
+    required this.emoji,
+    required this.assetPath,
+    required this.credit,
+    required this.aspectRatio,
+    required this.hotspots,
+  });
 }
 
 class AtlasHotspot {
   final String name, subtitle, emoji;
   final double x, y;
-  const AtlasHotspot(this.name,this.subtitle,this.emoji,this.x,this.y);
+  const AtlasHotspot(this.name, this.subtitle, this.emoji, this.x, this.y);
 }
 
 class _AtlasPageState extends State<AtlasPage> {
   int layerIndex = 0;
   bool showLabels = true;
+  String query = '';
   final TransformationController _transform = TransformationController();
+  Size _canvasSize = const Size(360, 600);
 
   static const layers = <AtlasLayerData>[
     AtlasLayerData(
-      id:'organs',label:'Organi',emoji:'🫀',
-      imageUrl:'https://commons.wikimedia.org/w/thumb.php?f=Internal_organs.svg&w=1200',
+      id:'organs', label:'Organi', emoji:'🫀',
+      assetPath:'assets/anatomy/organs.svg',
       credit:'Mikael Häggström · pubblico dominio',
+      aspectRatio:1.124,
       hotspots:[
-        AtlasHotspot('Cervello','Sistema nervoso','🧠',.50,.10),
-        AtlasHotspot('Polmoni','Sistema respiratorio','🫁',.50,.30),
-        AtlasHotspot('Cuore','Sistema cardiovascolare','❤️',.52,.36),
-        AtlasHotspot('Fegato','Sistema digerente','🟤',.43,.48),
-        AtlasHotspot('Stomaco','Sistema digerente','🥣',.58,.50),
-        AtlasHotspot('Reni','Sistema urinario','🫘',.50,.55),
-        AtlasHotspot('Intestino tenue','Sistema digerente','➰',.50,.65),
-        AtlasHotspot('Colon','Sistema digerente','🟫',.50,.69),
+        AtlasHotspot('Cervello','Sistema nervoso','🧠',.50,.105),
+        AtlasHotspot('Tiroide','Sistema endocrino','🦋',.50,.235),
+        AtlasHotspot('Polmone destro','Sistema respiratorio','🫁',.43,.345),
+        AtlasHotspot('Polmone sinistro','Sistema respiratorio','🫁',.57,.345),
+        AtlasHotspot('Cuore','Sistema cardiovascolare','❤️',.52,.405),
+        AtlasHotspot('Fegato','Sistema digerente','🟤',.42,.515),
+        AtlasHotspot('Stomaco','Sistema digerente','🥣',.58,.535),
+        AtlasHotspot('Milza','Sistema immunitario','🛡️',.64,.525),
+        AtlasHotspot('Pancreas','Sistema digerente/endocrino','🟡',.53,.575),
+        AtlasHotspot('Rene destro','Sistema urinario','🫘',.43,.59),
+        AtlasHotspot('Rene sinistro','Sistema urinario','🫘',.57,.59),
+        AtlasHotspot('Intestino tenue','Sistema digerente','➰',.50,.70),
+        AtlasHotspot('Colon','Sistema digerente','🟫',.50,.745),
+        AtlasHotspot('Vescica','Sistema urinario','💧',.50,.87),
       ],
     ),
     AtlasLayerData(
-      id:'skeleton',label:'Scheletro',emoji:'🦴',
-      imageUrl:'https://commons.wikimedia.org/w/thumb.php?f=Human_skeleton_(svg_template).svg&w=1200',
-      credit:'Mikael Häggström · CC0 / pubblico dominio',
+      id:'skeleton', label:'Scheletro', emoji:'🦴',
+      assetPath:'assets/anatomy/skeleton.svg',
+      credit:'Human body diagrams · Wikimedia Commons',
+      aspectRatio:.720,
       hotspots:[
-        AtlasHotspot('Cranio','Scheletro assile','💀',.50,.09),
-        AtlasHotspot('Clavicola','Cintura scapolare','🦴',.50,.22),
-        AtlasHotspot('Sterno','Scheletro assile','🦴',.50,.29),
+        AtlasHotspot('Cranio','Scheletro assile','💀',.50,.085),
+        AtlasHotspot('Mandibola','Cranio viscerale','🦴',.50,.135),
+        AtlasHotspot('Clavicola','Cintura scapolare','🦴',.50,.205),
+        AtlasHotspot('Scapola','Cintura scapolare','🦴',.36,.235),
+        AtlasHotspot('Sterno','Scheletro assile','🦴',.50,.285),
+        AtlasHotspot('Coste','Gabbia toracica','🦴',.50,.315),
+        AtlasHotspot('Colonna cervicale','C1-C7','🦴',.50,.18),
+        AtlasHotspot('Colonna toracica','T1-T12','🦴',.50,.34),
+        AtlasHotspot('Colonna lombare','L1-L5','🦴',.50,.49),
         AtlasHotspot('Omero','Arto superiore','🦴',.28,.34),
-        AtlasHotspot('Radio e ulna','Avambraccio','🦴',.20,.46),
-        AtlasHotspot('Carpo','8 ossa per mano','✋',.13,.57),
+        AtlasHotspot('Radio','Avambraccio','🦴',.19,.46),
+        AtlasHotspot('Ulna','Avambraccio','🦴',.22,.46),
+        AtlasHotspot('Carpo','8 ossa per mano','✋',.13,.56),
+        AtlasHotspot('Metacarpo','5 ossa per mano','✋',.12,.59),
+        AtlasHotspot('Falangi mano','14 per mano','✋',.11,.63),
         AtlasHotspot('Bacino','Cintura pelvica','🦴',.50,.57),
+        AtlasHotspot('Sacro','Colonna sacrale','🦴',.50,.59),
         AtlasHotspot('Femore','Coscia','🦴',.43,.70),
         AtlasHotspot('Rotula','Ginocchio','🦴',.43,.79),
-        AtlasHotspot('Tibia e fibula','Gamba','🦴',.43,.87),
-        AtlasHotspot('Tarso','7 ossa per piede','🦶',.41,.96),
+        AtlasHotspot('Tibia','Gamba','🦴',.43,.865),
+        AtlasHotspot('Fibula','Gamba','🦴',.39,.865),
+        AtlasHotspot('Tarso','7 ossa per piede','🦶',.41,.955),
+        AtlasHotspot('Metatarso','5 ossa per piede','🦶',.40,.975),
       ],
     ),
     AtlasLayerData(
-      id:'muscles',label:'Muscoli',emoji:'💪',
-      imageUrl:'https://commons.wikimedia.org/w/thumb.php?f=Muscles_front_and_back.svg&w=1400',
-      credit:'Nefronus · CC BY-SA 4.0',
+      id:'muscles', label:'Muscoli', emoji:'💪',
+      assetPath:'assets/anatomy/muscles.svg',
+      credit:'OpenStax + Tomáš Kebert / umimeto.org · CC BY-SA 4.0',
+      aspectRatio:1.148,
       hotspots:[
-        AtlasHotspot('Deltoide','Spalla','💪',.28,.22),
-        AtlasHotspot('Grande pettorale','Torace anteriore','💪',.31,.30),
-        AtlasHotspot('Bicipite brachiale','Braccio anteriore','💪',.22,.36),
-        AtlasHotspot('Retto dell’addome','Parete addominale','💪',.34,.48),
-        AtlasHotspot('Quadricipite','Coscia anteriore','💪',.31,.69),
-        AtlasHotspot('Trapezio','Dorso','💪',.72,.25),
-        AtlasHotspot('Gran dorsale','Dorso','💪',.72,.40),
-        AtlasHotspot('Grande gluteo','Regione glutea','💪',.72,.59),
-        AtlasHotspot('Ischiocrurali','Coscia posteriore','💪',.72,.70),
-        AtlasHotspot('Gastrocnemio','Polpaccio','💪',.72,.86),
+        AtlasHotspot('Sternocleidomastoideo','Collo anteriore','💪',.245,.18),
+        AtlasHotspot('Deltoide','Spalla','💪',.175,.245),
+        AtlasHotspot('Grande pettorale','Torace anteriore','💪',.25,.31),
+        AtlasHotspot('Bicipite brachiale','Braccio anteriore','💪',.15,.37),
+        AtlasHotspot('Retto dell’addome','Addome','💪',.25,.46),
+        AtlasHotspot('Obliquo esterno','Addome laterale','💪',.18,.47),
+        AtlasHotspot('Quadricipite','Coscia anteriore','💪',.22,.69),
+        AtlasHotspot('Tibiale anteriore','Gamba anteriore','💪',.22,.86),
+        AtlasHotspot('Trapezio','Dorso','💪',.74,.235),
+        AtlasHotspot('Deltoide posteriore','Spalla','💪',.83,.25),
+        AtlasHotspot('Tricipite brachiale','Braccio posteriore','💪',.85,.37),
+        AtlasHotspot('Gran dorsale','Dorso','💪',.74,.40),
+        AtlasHotspot('Erettori spinali','Dorso profondo','💪',.75,.46),
+        AtlasHotspot('Grande gluteo','Regione glutea','💪',.74,.59),
+        AtlasHotspot('Ischiocrurali','Coscia posteriore','💪',.76,.70),
+        AtlasHotspot('Gastrocnemio','Polpaccio','💪',.76,.86),
       ],
     ),
     AtlasLayerData(
-      id:'nervous',label:'Nervi',emoji:'⚡',
-      imageUrl:'https://commons.wikimedia.org/w/thumb.php?f=Nervous_system_diagram_unlabeled.svg&w=1000',
-      credit:'Wikimedia Commons',
+      id:'nervous', label:'Nervi', emoji:'⚡',
+      assetPath:'assets/anatomy/nervous.svg',
+      credit:'Medium69 / Jmarchn · Wikimedia Commons',
+      aspectRatio:.456,
       hotspots:[
-        AtlasHotspot('Cervello','Sistema nervoso centrale','🧠',.50,.10),
-        AtlasHotspot('Midollo spinale','Sistema nervoso centrale','⚡',.50,.35),
-        AtlasHotspot('Plesso brachiale','C5-T1','⚡',.43,.27),
-        AtlasHotspot('Nervo mediano','Arto superiore','⚡',.26,.43),
-        AtlasHotspot('Plesso lombosacrale','Arto inferiore','⚡',.50,.58),
-        AtlasHotspot('Nervo sciatico','Arto inferiore','⚡',.44,.72),
+        AtlasHotspot('Cervello','Sistema nervoso centrale','🧠',.50,.08),
+        AtlasHotspot('Cervelletto','Sistema nervoso centrale','🧠',.50,.12),
+        AtlasHotspot('Midollo spinale','Sistema nervoso centrale','⚡',.50,.34),
+        AtlasHotspot('Plesso cervicale','C1-C4','⚡',.50,.20),
+        AtlasHotspot('Plesso brachiale','C5-T1','⚡',.40,.28),
+        AtlasHotspot('Nervo radiale','Arto superiore','⚡',.25,.40),
+        AtlasHotspot('Nervo mediano','Arto superiore','⚡',.31,.43),
+        AtlasHotspot('Nervo ulnare','Arto superiore','⚡',.34,.46),
+        AtlasHotspot('Plesso lombare','L1-L4','⚡',.48,.54),
+        AtlasHotspot('Plesso sacrale','L4-S4','⚡',.50,.60),
+        AtlasHotspot('Nervo sciatico','Arto inferiore','⚡',.43,.73),
+        AtlasHotspot('Nervo tibiale','Gamba','⚡',.43,.86),
       ],
     ),
     AtlasLayerData(
-      id:'vascular',label:'Vasi',emoji:'🩸',
-      imageUrl:'https://commons.wikimedia.org/w/thumb.php?f=Circulatory_System_it.svg&w=1000',
-      credit:'LadyofHats / traduzione italiana · pubblico dominio',
+      id:'vascular', label:'Vasi', emoji:'🩸',
+      assetPath:'assets/anatomy/vascular.svg',
+      credit:'LadyofHats / P.gibellini · pubblico dominio',
+      aspectRatio:.663,
       hotspots:[
-        AtlasHotspot('Carotidi','Testa e collo','🔴',.49,.17),
-        AtlasHotspot('Vene giugulari','Testa e collo','🔵',.53,.17),
+        AtlasHotspot('Carotide comune','Testa e collo','🔴',.47,.17),
+        AtlasHotspot('Giugulare interna','Testa e collo','🔵',.53,.17),
+        AtlasHotspot('Succlavia','Arto superiore','🔴',.40,.24),
         AtlasHotspot('Cuore','Pompa centrale','❤️',.50,.34),
-        AtlasHotspot('Aorta','Arteria principale','🔴',.52,.39),
-        AtlasHotspot('Vena cava inferiore','Ritorno venoso','🔵',.47,.45),
-        AtlasHotspot('Arterie renali','Reni','🔴',.50,.53),
-        AtlasHotspot('Arterie iliache','Pelvi','🔴',.50,.61),
+        AtlasHotspot('Aorta ascendente','Torace','🔴',.52,.345),
+        AtlasHotspot('Arco aortico','Torace','🔴',.52,.31),
+        AtlasHotspot('Aorta toracica','Torace','🔴',.52,.41),
+        AtlasHotspot('Vena cava superiore','Torace','🔵',.47,.31),
+        AtlasHotspot('Aorta addominale','Addome','🔴',.52,.50),
+        AtlasHotspot('Vena cava inferiore','Addome','🔵',.47,.50),
+        AtlasHotspot('Arteria renale','Reni','🔴',.50,.54),
+        AtlasHotspot('Iliaca comune','Pelvi','🔴',.50,.61),
         AtlasHotspot('Arteria femorale','Coscia','🔴',.43,.72),
+        AtlasHotspot('Grande safena','Arto inferiore','🔵',.57,.77),
+        AtlasHotspot('Arteria tibiale','Gamba','🔴',.43,.87),
       ],
     ),
   ];
 
   @override
-  void dispose(){_transform.dispose();super.dispose();}
+  void dispose() {
+    _transform.dispose();
+    super.dispose();
+  }
+
+  List<(int, AtlasHotspot)> get _searchResults {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return const [];
+    final result = <(int, AtlasHotspot)>[];
+    for (var i=0; i<layers.length; i++) {
+      for (final h in layers[i].hotspots) {
+        if ((h.name+' '+h.subtitle).toLowerCase().contains(q)) {
+          result.add((i,h));
+        }
+      }
+    }
+    return result.take(8).toList();
+  }
+
+  void _focusHotspot(int newLayer, AtlasHotspot h) {
+    setState(() {
+      layerIndex = newLayer;
+      query = '';
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      const scale = 2.7;
+      final dx = _canvasSize.width/2 - h.x*_canvasSize.width*scale;
+      final dy = _canvasSize.height/2 - h.y*_canvasSize.height*scale;
+      _transform.value = Matrix4.identity()
+        ..translate(dx,dy)
+        ..scale(scale);
+    });
+  }
+
+  void _quickZoom(double x,double y,double scale) {
+    final dx = _canvasSize.width/2 - x*_canvasSize.width*scale;
+    final dy = _canvasSize.height/2 - y*_canvasSize.height*scale;
+    _transform.value = Matrix4.identity()
+      ..translate(dx,dy)
+      ..scale(scale);
+  }
 
   @override
-  Widget build(BuildContext context){
-    final layer=layers[layerIndex];
+  Widget build(BuildContext context) {
+    final layer = layers[layerIndex];
+    final results = _searchResults;
     return Scaffold(
-      appBar:AppBar(
-        title:const Text('Atlante anatomico'),
-        actions:[
-          IconButton(tooltip:showLabels?'Nascondi etichette':'Mostra etichette',onPressed:()=>setState(()=>showLabels=!showLabels),icon:Icon(showLabels?Icons.label:Icons.label_off_outlined)),
-          IconButton(tooltip:'Reset zoom',onPressed:()=>_transform.value=Matrix4.identity(),icon:const Icon(Icons.center_focus_strong)),
+      appBar: AppBar(
+        title: const Text('Atlante anatomico'),
+        actions: [
+          IconButton(
+            tooltip: showLabels ? 'Nascondi etichette' : 'Mostra etichette',
+            onPressed: ()=>setState(()=>showLabels=!showLabels),
+            icon: Icon(showLabels?Icons.label:Icons.label_off_outlined),
+          ),
+          IconButton(
+            tooltip:'Reset zoom',
+            onPressed:()=>_transform.value=Matrix4.identity(),
+            icon:const Icon(Icons.center_focus_strong),
+          ),
         ],
       ),
-      body:Column(children:[
+      body: Column(children:[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12,2,12,6),
+          child: SearchBar(
+            hintText:'Cerca femore, cuore, sciatico...',
+            leading:const Icon(Icons.search),
+            trailing: query.isEmpty ? null : [
+              IconButton(icon:const Icon(Icons.close),onPressed:()=>setState(()=>query=''))
+            ],
+            onChanged:(v)=>setState(()=>query=v),
+          ),
+        ),
+        if(results.isNotEmpty)
+          Container(
+            constraints:const BoxConstraints(maxHeight:190),
+            margin:const EdgeInsets.symmetric(horizontal:12),
+            decoration:BoxDecoration(
+              color:Colors.white,
+              borderRadius:BorderRadius.circular(18),
+              boxShadow:const [BoxShadow(color:Color(0x22000000),blurRadius:10)],
+            ),
+            child:ListView(
+              shrinkWrap:true,
+              children:results.map((r)=>ListTile(
+                dense:true,
+                leading:Text(r.$2.emoji),
+                title:Text(r.$2.name,style:const TextStyle(fontWeight:FontWeight.w800)),
+                subtitle:Text(layers[r.$1].label+' · '+r.$2.subtitle),
+                onTap:()=>_focusHotspot(r.$1,r.$2),
+              )).toList(),
+            ),
+          ),
         SizedBox(
-          height:54,
+          height:50,
           child:ListView.separated(
-            padding:const EdgeInsets.symmetric(horizontal:12,vertical:5),
+            padding:const EdgeInsets.symmetric(horizontal:12,vertical:4),
             scrollDirection:Axis.horizontal,
             itemCount:layers.length,
-            separatorBuilder:(_,__)=>const SizedBox(width:7),
+            separatorBuilder:(_,__)=>const SizedBox(width:6),
             itemBuilder:(_,i)=>ChoiceChip(
               selected:layerIndex==i,
               label:Text(layers[i].emoji+' '+layers[i].label),
-              onSelected:(_){setState(()=>layerIndex=i);_transform.value=Matrix4.identity();},
+              onSelected:(_){
+                setState(()=>layerIndex=i);
+                _transform.value=Matrix4.identity();
+              },
             ),
           ),
         ),
-        Container(
-          margin:const EdgeInsets.fromLTRB(14,4,14,8),
-          padding:const EdgeInsets.symmetric(horizontal:12,vertical:9),
-          decoration:BoxDecoration(color:Theme.of(context).colorScheme.primaryContainer,borderRadius:BorderRadius.circular(18)),
-          child:Row(children:[
-            Expanded(child:Text(layer.emoji+' '+layer.label,style:const TextStyle(fontWeight:FontWeight.w900))),
-            const Icon(Icons.pinch_outlined,size:18),
-            const SizedBox(width:5),
-            const Text('Pizzica per zoom',style:TextStyle(fontSize:12)),
-          ]),
+        SizedBox(
+          height:42,
+          child:ListView(
+            scrollDirection:Axis.horizontal,
+            padding:const EdgeInsets.symmetric(horizontal:12),
+            children:[
+              _ZoomChip('Intero',Icons.accessibility_new,()=>_transform.value=Matrix4.identity()),
+              _ZoomChip('Testa',Icons.face,()=>_quickZoom(.50,.12,3.2)),
+              _ZoomChip('Torace',Icons.favorite_outline,()=>_quickZoom(.50,.33,2.7)),
+              _ZoomChip('Addome',Icons.circle_outlined,()=>_quickZoom(.50,.53,2.8)),
+              _ZoomChip('Pelvi',Icons.change_history,()=>_quickZoom(.50,.62,3.0)),
+              _ZoomChip('Arto sup.',Icons.pan_tool_alt_outlined,()=>_quickZoom(.24,.42,2.8)),
+              _ZoomChip('Arto inf.',Icons.directions_walk,()=>_quickZoom(.44,.78,2.8)),
+            ],
+          ),
         ),
         Expanded(
-          child:Container(
-            margin:const EdgeInsets.symmetric(horizontal:10),
-            clipBehavior:Clip.antiAlias,
-            decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(24)),
-            child:InteractiveViewer(
-              transformationController:_transform,
-              minScale:.7,maxScale:6,boundaryMargin:const EdgeInsets.all(220),
-              child:AspectRatio(
-                aspectRatio:.64,
-                child:Stack(
-                  fit:StackFit.expand,
-                  children:[
-                    _AtlasImage(url:layer.imageUrl,fallbackLabel:layer.label),
-                    ...layer.hotspots.map((h)=>_AtlasHotspotWidget(hotspot:h,showLabel:showLabels)),
-                  ],
+          child:LayoutBuilder(
+            builder:(context,constraints){
+              final width=constraints.maxWidth-20;
+              final height=width/layer.aspectRatio;
+              _canvasSize=Size(width,height);
+              return Container(
+                margin:const EdgeInsets.symmetric(horizontal:10,vertical:6),
+                clipBehavior:Clip.antiAlias,
+                decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(24)),
+                child:InteractiveViewer(
+                  transformationController:_transform,
+                  minScale:.65,
+                  maxScale:7,
+                  boundaryMargin:const EdgeInsets.all(260),
+                  child:SizedBox(
+                    width:width,
+                    height:height,
+                    child:Stack(
+                      fit:StackFit.expand,
+                      children:[
+                        SvgPicture.asset(
+                          layer.assetPath,
+                          fit:BoxFit.contain,
+                          semanticsLabel:layer.label,
+                          placeholderBuilder:(_)=>const Center(child:CircularProgressIndicator()),
+                        ),
+                        ...layer.hotspots.map((h)=>_AtlasHotspotWidget(
+                          hotspot:h,
+                          showLabel:showLabels,
+                          onTap:()=>_showHotspot(h,layer),
+                        )),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ),
         Padding(
-          padding:const EdgeInsets.fromLTRB(16,8,16,12),
+          padding:const EdgeInsets.fromLTRB(16,4,16,10),
           child:Row(children:[
-            const Icon(Icons.info_outline,size:16),
+            const Icon(Icons.offline_bolt_outlined,size:16),
             const SizedBox(width:6),
-            Expanded(child:Text(layer.credit,style:const TextStyle(fontSize:11,color:Colors.black54))),
-            Text(layer.hotspots.length.toString()+' hotspot',style:const TextStyle(fontSize:11,fontWeight:FontWeight.w800)),
+            const Text('Offline',style:TextStyle(fontSize:11,fontWeight:FontWeight.w900)),
+            const SizedBox(width:10),
+            Expanded(child:Text(layer.credit,style:const TextStyle(fontSize:10,color:Colors.black54))),
+            Text(layer.hotspots.length.toString()+' hotspot',style:const TextStyle(fontSize:10,fontWeight:FontWeight.w800)),
           ]),
         ),
       ]),
     );
   }
-}
 
-class _AtlasImage extends StatelessWidget {
-  final String url,fallbackLabel;
-  const _AtlasImage({required this.url,required this.fallbackLabel});
-  @override
-  Widget build(BuildContext context){
-    return Image.network(
-      url,fit:BoxFit.contain,filterQuality:FilterQuality.high,
-      loadingBuilder:(context,child,progress){
-        if(progress==null)return child;
-        return Center(child:Column(mainAxisSize:MainAxisSize.min,children:[
-          const CircularProgressIndicator(),
-          const SizedBox(height:12),
-          Text('Caricamento atlante '+fallbackLabel+'...'),
-        ]));
-      },
-      errorBuilder:(context,error,stack)=>Center(
+  Future<void> _showHotspot(AtlasHotspot h, AtlasLayerData layer) {
+    return showModalBottomSheet<void>(
+      context:context,
+      showDragHandle:true,
+      builder:(sheet)=>SafeArea(
         child:Padding(
-          padding:const EdgeInsets.all(24),
-          child:Column(mainAxisSize:MainAxisSize.min,children:[
-            const Icon(Icons.cloud_off,size:52),
-            const SizedBox(height:12),
-            const Text('Immagine anatomica non disponibile',style:TextStyle(fontWeight:FontWeight.w900)),
-            const SizedBox(height:6),
-            const Text('Questa build usa tavole anatomiche Wikimedia Commons e richiede una connessione per il caricamento.',textAlign:TextAlign.center),
-          ]),
+          padding:const EdgeInsets.fromLTRB(22,4,22,28),
+          child:Column(
+            mainAxisSize:MainAxisSize.min,
+            crossAxisAlignment:CrossAxisAlignment.start,
+            children:[
+              Row(children:[
+                Text(h.emoji,style:const TextStyle(fontSize:46)),
+                const SizedBox(width:14),
+                Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                  Text(h.name,style:const TextStyle(fontSize:24,fontWeight:FontWeight.w900)),
+                  Text(h.subtitle,style:TextStyle(color:Theme.of(context).colorScheme.primary,fontWeight:FontWeight.w800)),
+                ])),
+              ]),
+              const SizedBox(height:18),
+              Text('Layer: '+layer.label,style:const TextStyle(fontWeight:FontWeight.w800)),
+              const SizedBox(height:8),
+              const Text('Questa struttura è collegata all’Atlante e può essere usata come punto di partenza per ricerca, quiz e approfondimenti anatomici.',style:TextStyle(height:1.45)),
+              const SizedBox(height:16),
+              Row(children:[
+                Expanded(child:OutlinedButton.icon(
+                  onPressed:(){
+                    Navigator.pop(sheet);
+                    Navigator.push(context,MaterialPageRoute(builder:(_)=>const AdvancedPage()));
+                  },
+                  icon:const Icon(Icons.menu_book_outlined),
+                  label:const Text('Approfondisci'),
+                )),
+                const SizedBox(width:8),
+                Expanded(child:FilledButton.icon(
+                  onPressed:(){
+                    Navigator.pop(sheet);
+                    Navigator.push(context,MaterialPageRoute(builder:(_)=>const GamesPage()));
+                  },
+                  icon:const Icon(Icons.quiz_outlined),
+                  label:const Text('Allenati'),
+                )),
+              ]),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
+class _ZoomChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  const _ZoomChip(this.label,this.icon,this.onTap);
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding:const EdgeInsets.only(right:6),
+    child:ActionChip(
+      avatar:Icon(icon,size:16),
+      label:Text(label),
+      onPressed:onTap,
+    ),
+  );
+}
+
 class _AtlasHotspotWidget extends StatelessWidget {
   final AtlasHotspot hotspot;
   final bool showLabel;
-  const _AtlasHotspotWidget({required this.hotspot,required this.showLabel});
+  final VoidCallback onTap;
+  const _AtlasHotspotWidget({required this.hotspot,required this.showLabel,required this.onTap});
+
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return Align(
       alignment:Alignment(hotspot.x*2-1,hotspot.y*2-1),
       child:GestureDetector(
-        onTap:()=>showModalBottomSheet<void>(
-          context:context,showDragHandle:true,
-          builder:(sheet)=>Padding(
-            padding:const EdgeInsets.fromLTRB(22,4,22,28),
-            child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
-              Text(hotspot.emoji,style:const TextStyle(fontSize:46)),
-              const SizedBox(height:8),
-              Text(hotspot.name,style:const TextStyle(fontSize:25,fontWeight:FontWeight.w900)),
-              const SizedBox(height:4),
-              Text(hotspot.subtitle,style:TextStyle(color:Theme.of(context).colorScheme.primary,fontWeight:FontWeight.w800)),
-              const SizedBox(height:16),
-              const Text('Struttura selezionata nell’Atlante anatomico. Questa vista serve come punto di ingresso per approfondimenti, quiz e percorso macro→micro.',style:TextStyle(height:1.45)),
-            ]),
-          ),
-        ),
+        onTap:onTap,
         child:Column(mainAxisSize:MainAxisSize.min,children:[
           Container(
-            width:30,height:30,alignment:Alignment.center,
-            decoration:BoxDecoration(color:Colors.white,shape:BoxShape.circle,border:Border.all(color:const Color(0xFF6755E7),width:2),boxShadow:const [BoxShadow(color:Color(0x33000000),blurRadius:6)]),
-            child:Text(hotspot.emoji,style:const TextStyle(fontSize:14)),
+            width:28,height:28,alignment:Alignment.center,
+            decoration:BoxDecoration(
+              color:Colors.white,
+              shape:BoxShape.circle,
+              border:Border.all(color:const Color(0xFF6755E7),width:2),
+              boxShadow:const [BoxShadow(color:Color(0x33000000),blurRadius:6)],
+            ),
+            child:Text(hotspot.emoji,style:const TextStyle(fontSize:13)),
           ),
           if(showLabel)
             Container(
-              constraints:const BoxConstraints(maxWidth:110),
-              margin:const EdgeInsets.only(top:3),
-              padding:const EdgeInsets.symmetric(horizontal:6,vertical:3),
-              decoration:BoxDecoration(color:Colors.white.withValues(alpha:.92),borderRadius:BorderRadius.circular(8)),
-              child:Text(hotspot.name,textAlign:TextAlign.center,style:const TextStyle(fontSize:9,fontWeight:FontWeight.w900)),
+              constraints:const BoxConstraints(maxWidth:105),
+              margin:const EdgeInsets.only(top:2),
+              padding:const EdgeInsets.symmetric(horizontal:5,vertical:2),
+              decoration:BoxDecoration(
+                color:Colors.white.withValues(alpha:.93),
+                borderRadius:BorderRadius.circular(7),
+              ),
+              child:Text(
+                hotspot.name,
+                textAlign:TextAlign.center,
+                style:const TextStyle(fontSize:8.5,fontWeight:FontWeight.w900),
+              ),
             ),
         ]),
       ),
@@ -607,7 +806,7 @@ class ProfilePage extends StatelessWidget {
               CircleAvatar(radius:34,child:Text('18',style:TextStyle(fontSize:24,fontWeight:FontWeight.w900))),
               SizedBox(width:16),
               Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-                Text('edu_01 · v0.18.0',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),
+                Text('edu_01 · v0.19.0',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),
                 Text('Atlante umano interattivo'),
               ])),
             ]),
@@ -627,7 +826,7 @@ class ProfilePage extends StatelessWidget {
             ],
           ),
           const SizedBox(height:20),
-          const Card(child:ListTile(leading:Icon(Icons.info_outline),title:Text('Build consolidata',style:TextStyle(fontWeight:FontWeight.w900)),subtitle:Text('edu_01 0.18.0+18 · Android · offline'))),
+          const Card(child:ListTile(leading:Icon(Icons.info_outline),title:Text('Build consolidata',style:TextStyle(fontWeight:FontWeight.w900)),subtitle:Text('edu_01 0.19.0+19 · Android · Atlante offline'))),
         ],
       ),
     );
