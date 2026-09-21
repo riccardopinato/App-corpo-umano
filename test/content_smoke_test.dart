@@ -28,4 +28,13 @@ void main() {
     expect(types.contains(ExpandedContentType.reproductive), isTrue);
     expect(types.contains(ExpandedContentType.primaryTooth), isTrue);
   });
+
+  test('atlas study mastery math and error notebook state', () {
+    final store = StudyProgressStore();
+    store.atlasRegionAttempts['Testa'] = 4;
+    store.atlasRegionCorrect['Testa'] = 3;
+    store.atlasStructureErrors['Cranio'] = 2;
+    expect(store.atlasMasteryFor('Testa'), 75);
+    expect(store.atlasErrorNames.first, 'Cranio');
+  });
 }
