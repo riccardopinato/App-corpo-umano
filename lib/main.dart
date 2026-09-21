@@ -954,6 +954,325 @@ class _AtlasHotspotWidget extends StatelessWidget {
   }
 }
 
+
+class AtlasLabPage extends StatefulWidget {
+  const AtlasLabPage({super.key});
+  @override
+  State<AtlasLabPage> createState()=>_AtlasLabPageState();
+}
+
+class _AtlasLabPageState extends State<AtlasLabPage> {
+  final Set<String> enabled={'skeleton','organs'};
+  final Map<String,double> opacity={
+    'skeleton':.90,
+    'muscles':.72,
+    'organs':.88,
+    'nervous':.85,
+    'vascular':.85,
+  };
+  final Set<String> selectedStructures={};
+  bool showLabels=true;
+  bool showSurface=true;
+  bool isolateSelection=false;
+
+  AtlasLayerData _layer(String id)=>_AtlasPageState.layers.firstWhere((e)=>e.id==id);
+
+  @override
+  Widget build(BuildContext context){
+    final active=_AtlasPageState.layers.where((l)=>enabled.contains(l.id)).toList();
+    return Scaffold(
+      appBar:AppBar(
+        title:const Text('Anatomy Lab'),
+        actions:[
+          IconButton(
+            tooltip:'Seleziona strutture',
+            onPressed:_pickStructures,
+            icon:Badge(
+              isLabelVisible:selectedStructures.isNotEmpty,
+              label:Text(selectedStructures.length.toString()),
+              child:const Icon(Icons.add_location_alt_outlined),
+            ),
+          ),
+          IconButton(
+            tooltip:showLabels?'Nascondi etichette':'Mostra etichette',
+            onPressed:()=>setState(()=>showLabels=!showLabels),
+            icon:Icon(showLabels?Icons.label_outline:Icons.label_off_outlined),
+          ),
+        ],
+      ),
+      body:Column(children:[
+        SizedBox(
+          height:54,
+          child:ListView(
+            scrollDirection:Axis.horizontal,
+            padding:const EdgeInsets.symmetric(horizontal:12,vertical:5),
+            children:[
+              FilterChip(
+                selected:showSurface,
+                label:const Text('🧍 Superficie'),
+                onSelected:(v)=>setState(()=>showSurface=v),
+              ),
+              const SizedBox(width:6),
+              ..._AtlasPageState.layers.map((l)=>Padding(
+                padding:const EdgeInsets.only(right:6),
+                child:FilterChip(
+                  selected:enabled.contains(l.id),
+                  label:Text(l.emoji+' '+l.label),
+                  onSelected:(v)=>setState((){
+                    if(v){
+                      enabled.add(l.id);
+                    }else{
+                      enabled.remove(l.id);
+                    }
+                  }),
+                ),
+              )),
+            ],
+          ),
+        ),
+        if(active.isNotEmpty)
+          SizedBox(
+            height:66,
+            child:ListView(
+              scrollDirection:Axis.horizontal,
+              padding:const EdgeInsets.symmetric(horizontal:12),
+              children:active.map((l)=>Container(
+                width:180,
+                margin:const EdgeInsets.only(right:8),
+                padding:const EdgeInsets.symmetric(horizontal:12,vertical:5),
+                decoration:BoxDecoration(
+                  color:Theme.of(context).colorScheme.surfaceContainerLow,
+                  borderRadius:BorderRadius.circular(18),
+                ),
+                child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                  Text(l.label,style:const TextStyle(fontSize:11,fontWeight:FontWeight.w900)),
+                  Slider(
+                    value:opacity[l.id]??.8,
+                    min:.10,
+                    max:1,
+                    onChanged:(v)=>setState(()=>opacity[l.id]=v),
+                  ),
+                ]),
+              )).toList(),
+            ),
+          ),
+        if(selectedStructures.isNotEmpty)
+          Container(
+            margin:const EdgeInsets.fromLTRB(12,4,12,6),
+            padding:const EdgeInsets.all(10),
+            decoration:BoxDecoration(
+              color:Theme.of(context).colorScheme.secondaryContainer,
+              borderRadius:BorderRadius.circular(18),
+            ),
+            child:Row(children:[
+              Expanded(child:Text(
+                selectedStructures.take(3).join(' · ')+(selectedStructures.length>3?' +'+(selectedStructures.length-3).toString():''),
+                maxLines:2,
+                overflow:TextOverflow.ellipsis,
+                style:const TextStyle(fontWeight:FontWeight.w800),
+              )),
+              const SizedBox(width:8),
+              FilterChip(
+                selected:isolateSelection,
+                label:const Text('Isola'),
+                onSelected:(v)=>setState(()=>isolateSelection=v),
+              ),
+              IconButton(
+                tooltip:'Svuota selezione',
+                onPressed:()=>setState((){
+                  selectedStructures.clear();
+                  isolateSelection=false;
+                }),
+                icon:const Icon(Icons.clear),
+              ),
+            ]),
+          ),
+        Expanded(
+          child:Container(
+            margin:const EdgeInsets.fromLTRB(10,4,10,10),
+            clipBehavior:Clip.antiAlias,
+            decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(26)),
+            child:InteractiveViewer(
+              minScale:.7,
+              maxScale:6,
+              boundaryMargin:const EdgeInsets.all(220),
+              child:AspectRatio(
+                aspectRatio:.72,
+                child:Stack(
+                  fit:StackFit.expand,
+                  children:[
+                    if(showSurface)
+                      CustomPaint(painter:_SurfaceOutlinePainter()),
+                    ...active.map((l)=>Opacity(
+                      opacity:opacity[l.id]??.8,
+                      child:SvgPicture.asset(
+                        l.assetPath,
+                        fit:BoxFit.contain,
+                        semanticsLabel:l.label,
+                      ),
+                    )),
+                    ..._labMarkers(active),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding:const EdgeInsets.fromLTRB(16,0,16,12),
+          child:Row(children:[
+            const Icon(Icons.layers_outlined,size:17),
+            const SizedBox(width:6),
+            Expanded(child:Text(
+              active.isEmpty
+                  ?'Attiva almeno un layer.'
+                  :'Layer attivi: '+active.map((e)=>e.label).join(', '),
+              style:const TextStyle(fontSize:11),
+            )),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  List<Widget> _labMarkers(List<AtlasLayerData> active){
+    final widgets=<Widget>[];
+    for(final layer in active){
+      for(final h in layer.hotspots){
+        final selected=selectedStructures.contains(h.name);
+        if(isolateSelection&&!selected)continue;
+        if(!showLabels&&!selected)continue;
+        widgets.add(Align(
+          alignment:Alignment(h.x*2-1,h.y*2-1),
+          child:Container(
+            constraints:const BoxConstraints(maxWidth:105),
+            padding:EdgeInsets.symmetric(horizontal:selected?7:5,vertical:selected?5:3),
+            decoration:BoxDecoration(
+              color:selected
+                  ?Theme.of(context).colorScheme.primaryContainer
+                  :Colors.white.withValues(alpha:.86),
+              borderRadius:BorderRadius.circular(9),
+              border:selected?Border.all(color:Theme.of(context).colorScheme.primary,width:2):null,
+            ),
+            child:Text(
+              h.name,
+              textAlign:TextAlign.center,
+              style:TextStyle(
+                fontSize:selected?9.5:8,
+                fontWeight:selected?FontWeight.w900:FontWeight.w700,
+              ),
+            ),
+          ),
+        ));
+      }
+    }
+    return widgets;
+  }
+
+  Future<void> _pickStructures() async {
+    final all=<({AtlasLayerData layer,AtlasHotspot hotspot})>[];
+    for(final l in _AtlasPageState.layers){
+      for(final h in l.hotspots){
+        all.add((layer:l,hotspot:h));
+      }
+    }
+    String q='';
+    await showModalBottomSheet<void>(
+      context:context,
+      isScrollControlled:true,
+      showDragHandle:true,
+      builder:(sheet)=>StatefulBuilder(
+        builder:(context,setSheet)=>SafeArea(
+          child:SizedBox(
+            height:MediaQuery.of(context).size.height*.78,
+            child:Column(children:[
+              Padding(
+                padding:const EdgeInsets.symmetric(horizontal:16),
+                child:SearchBar(
+                  hintText:'Cerca struttura...',
+                  leading:const Icon(Icons.search),
+                  onChanged:(v)=>setSheet(()=>q=v.toLowerCase()),
+                ),
+              ),
+              const SizedBox(height:8),
+              Expanded(child:ListView(
+                padding:const EdgeInsets.fromLTRB(12,0,12,18),
+                children:all
+                    .where((e)=>q.isEmpty||(e.hotspot.name+' '+e.hotspot.subtitle).toLowerCase().contains(q))
+                    .map((e){
+                      final checked=selectedStructures.contains(e.hotspot.name);
+                      return CheckboxListTile(
+                        value:checked,
+                        secondary:Text(e.hotspot.emoji),
+                        title:Text(e.hotspot.name,style:const TextStyle(fontWeight:FontWeight.w800)),
+                        subtitle:Text(e.layer.label+' · '+e.hotspot.subtitle),
+                        onChanged:(v){
+                          setState((){
+                            if(v==true){
+                              selectedStructures.add(e.hotspot.name);
+                              enabled.add(e.layer.id);
+                            }else{
+                              selectedStructures.remove(e.hotspot.name);
+                            }
+                          });
+                          setSheet((){});
+                        },
+                      );
+                    }).toList(),
+              )),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SurfaceOutlinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas,Size size){
+    final paint=Paint()
+      ..color=const Color(0xFFE7E8EE)
+      ..style=PaintingStyle.fill;
+    final stroke=Paint()
+      ..color=const Color(0xFFB7BAC8)
+      ..style=PaintingStyle.stroke
+      ..strokeWidth=1.6;
+
+    final cx=size.width/2;
+    final head=Rect.fromCenter(
+      center:Offset(cx,size.height*.09),
+      width:size.width*.16,
+      height:size.height*.12,
+    );
+    canvas.drawOval(head,paint);
+    canvas.drawOval(head,stroke);
+
+    final torso=RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center:Offset(cx,size.height*.33),
+        width:size.width*.31,
+        height:size.height*.34,
+      ),
+      Radius.circular(size.width*.12),
+    );
+    canvas.drawRRect(torso,paint);
+    canvas.drawRRect(torso,stroke);
+
+    for(final side in [-1.0,1.0]){
+      final shoulder=Offset(cx+side*size.width*.17,size.height*.22);
+      final hand=Offset(cx+side*size.width*.34,size.height*.58);
+      canvas.drawLine(shoulder,hand,stroke..strokeWidth=size.width*.075);
+      final hip=Offset(cx+side*size.width*.09,size.height*.49);
+      final foot=Offset(cx+side*size.width*.12,size.height*.96);
+      canvas.drawLine(hip,foot,stroke..strokeWidth=size.width*.09);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate)=>false;
+}
+
 class StudyPage extends StatefulWidget {
   final int answered,correct;
   final ValueChanged<bool> onAnswer;
