@@ -4,6 +4,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'histology.dart';
 import 'deep_dive.dart';
 import 'smart_study.dart';
+import 'games_v2.dart';
+import 'content_expansion.dart';
+import 'release_center.dart';
 
 void main() => runApp(const HumanBodyApp());
 
@@ -11,17 +14,17 @@ class HumanBodyApp extends StatelessWidget {
   const HumanBodyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    final scheme = ColorScheme.fromSeed(seedColor: const Color(0xFF6755E7));
+    final scheme = ColorScheme.fromSeed(seedColor: const Color(0xFF5B4BCE), brightness: Brightness.light);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'edu_01',
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: scheme,
-        scaffoldBackgroundColor: const Color(0xFFF8F8FC),
+        scaffoldBackgroundColor: const Color(0xFFF7F7FC),
         cardTheme: CardThemeData(
           elevation: 0,
-          color: Colors.white,
+          color: const Color(0xFFFFFFFF),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         ),
         appBarTheme: const AppBarTheme(
@@ -116,7 +119,7 @@ class _MainShellState extends State<MainShell> {
       const LearnPage(),
       const AtlasPage(),
       SmartStudyV2Page(store: studyStore),
-      ProfilePage(answered: studyStore.totalAnswers, correct: studyStore.totalCorrect),
+      ProfilePage(answered: studyStore.totalAnswers, correct: studyStore.totalCorrect, studyStore: studyStore),
     ];
     return Scaffold(
       body: IndexedStack(index: tab, children: pages),
@@ -166,7 +169,7 @@ class TodayPage extends StatelessWidget {
           const SizedBox(height:10),
           ActionCard(emoji:'🫀',title:'Fisiologia interattiva',subtitle:'9 processi spiegati passo-passo',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const PhysiologyPage()))),
           const SizedBox(height:10),
-          ActionCard(emoji:'🎮',title:'Anatomy Games',subtitle:'Riconoscimento anatomico e sfide',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const GamesPage()))),
+          ActionCard(emoji:'🎮',title:'Anatomy Games',subtitle:'Riconoscimento anatomico e sfide',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const GamesHubPage()))),
           const SizedBox(height:24),
           const Text('In numeri',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),
           const SizedBox(height:10),
@@ -194,13 +197,15 @@ class LearnPage extends StatelessWidget {
         children: [
           FeatureCard(color:const Color(0xFFDDF3FF),emoji:'🫀',title:'Fisiologia interattiva',subtitle:'Cuore, respirazione, digestione, rene, neuroni e muscoli',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const PhysiologyPage()))),
           const SizedBox(height:10),
-          FeatureCard(color:const Color(0xFFFFE5E4),emoji:'🎮',title:'Anatomy Games',subtitle:'Impara giocando con il database anatomico',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const GamesPage()))),
+          FeatureCard(color:const Color(0xFFFFE5E4),emoji:'🎮',title:'Anatomy Games',subtitle:'Impara giocando con il database anatomico',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const GamesHubPage()))),
           const SizedBox(height:10),
           FeatureCard(color:const Color(0xFFE8F0FF),emoji:'🧬',title:'Anatomia avanzata',subtitle:'Cranio, colonna, mano, piede, legamenti, nervi e vasi',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const AdvancedPage()))),
           const SizedBox(height:10),
           FeatureCard(color:const Color(0xFFE5F7F2),emoji:'🔬',title:'Istologia & cellule',subtitle:'Tessuti, cellule, organelli e percorsi corpo → organo → cellula',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const HistologyHubPage()))),
           const SizedBox(height:10),
           FeatureCard(color:const Color(0xFFF0E8FF),emoji:'🔎',title:'Deep Dive anatomico',subtitle:'Entra dentro cuore, cervello, polmoni, reni, fegato e altri organi',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const DeepDiveHubPage()))),
+          const SizedBox(height:10),
+          FeatureCard(color:const Color(0xFFFFF0DD),emoji:'📚',title:'Catalogo completo',subtitle:'Muscoli, articolazioni, legamenti, linfatico, riproduttivo e dentizione decidua',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ExpandedContentPage()))),
           const SizedBox(height:24),
           const Text('11 sistemi del corpo',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),
           const SizedBox(height:10),
@@ -647,7 +652,7 @@ class _AtlasPageState extends State<AtlasPage> {
                 Expanded(child:FilledButton.icon(
                   onPressed:(){
                     Navigator.pop(sheet);
-                    Navigator.push(context,MaterialPageRoute(builder:(_)=>const GamesPage()));
+                    Navigator.push(context,MaterialPageRoute(builder:(_)=>const GamesHubPage()));
                   },
                   icon:const Icon(Icons.quiz_outlined),
                   label:const Text('Allenati'),
@@ -822,7 +827,8 @@ class QuizItem {
 
 class ProfilePage extends StatelessWidget {
   final int answered,correct;
-  const ProfilePage({super.key,required this.answered,required this.correct});
+  final StudyProgressStore studyStore;
+  const ProfilePage({super.key,required this.answered,required this.correct,required this.studyStore});
   @override
   Widget build(BuildContext context){
     final acc=answered==0?'—':(correct*100~/answered).toString()+'%';
@@ -838,7 +844,7 @@ class ProfilePage extends StatelessWidget {
               CircleAvatar(radius:34,child:Text('18',style:TextStyle(fontSize:24,fontWeight:FontWeight.w900))),
               SizedBox(width:16),
               Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-                Text('edu_01 · v0.22.0',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),
+                Text('edu_01 · v0.25.0',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),
                 Text('Atlante umano interattivo'),
               ])),
             ]),
@@ -858,7 +864,15 @@ class ProfilePage extends StatelessWidget {
             ],
           ),
           const SizedBox(height:20),
-          const Card(child:ListTile(leading:Icon(Icons.info_outline),title:Text('Build consolidata',style:TextStyle(fontWeight:FontWeight.w900)),subtitle:Text('edu_01 0.22.0+22 · Android · Histology + Deep Dive + Smart Study 2.0'))),
+          Card(child:ListTile(
+            leading:const Icon(Icons.verified_outlined),
+            title:const Text('Release Center',style:TextStyle(fontWeight:FontWeight.w900)),
+            subtitle:const Text('Versione, qualità, licenze e gestione progressi'),
+            trailing:const Icon(Icons.chevron_right),
+            onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ReleaseCenterPage(studyStore:studyStore))),
+          )),
+          const SizedBox(height:8),
+          const Card(child:ListTile(leading:Icon(Icons.info_outline),title:Text('Build consolidata',style:TextStyle(fontWeight:FontWeight.w900)),subtitle:Text('edu_01 0.25.0+25 · Android · Release Candidate'))),
         ],
       ),
     );
