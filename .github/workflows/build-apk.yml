@@ -1,4 +1,4 @@
-name: Build Android Optimized Release
+name: Build Android v0.32 Optimized Release
 
 on:
   push:
@@ -49,60 +49,60 @@ jobs:
       - name: Build universal release APK
         run: |
           flutter build apk --release --obfuscate --split-debug-info=build/symbols/universal
-          cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/edu_01-v0.29.0-universal-release.apk
+          cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/edu_01-v0.32.0-universal-release.apk
 
       - name: Build split release APKs
         run: |
           flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/symbols/split
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/edu_01-v0.29.0-arm64-release.apk
-          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/edu_01-v0.29.0-armeabi-v7a-release.apk
-          cp build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/edu_01-v0.29.0-x86_64-release.apk
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/edu_01-v0.32.0-arm64-release.apk
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/edu_01-v0.32.0-armeabi-v7a-release.apk
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/edu_01-v0.32.0-x86_64-release.apk
 
       - name: Build Play Store AAB
         run: |
           flutter build appbundle --release --obfuscate --split-debug-info=build/symbols/aab
-          cp build/app/outputs/bundle/release/app-release.aab build/app/outputs/bundle/release/edu_01-v0.29.0-release.aab
+          cp build/app/outputs/bundle/release/app-release.aab build/app/outputs/bundle/release/edu_01-v0.32.0-release.aab
 
       - name: Verify APK signatures and report sizes
         run: |
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)
-          "$APKSIGNER" verify --verbose build/app/outputs/flutter-apk/edu_01-v0.29.0-universal-release.apk
-          "$APKSIGNER" verify --verbose build/app/outputs/flutter-apk/edu_01-v0.29.0-arm64-release.apk
+          "$APKSIGNER" verify --verbose build/app/outputs/flutter-apk/edu_01-v0.32.0-universal-release.apk
+          "$APKSIGNER" verify --verbose build/app/outputs/flutter-apk/edu_01-v0.32.0-arm64-release.apk
           echo "=== SIZE REPORT ==="
-          ls -lh build/app/outputs/flutter-apk/edu_01-v0.29.0-*.apk
-          ls -lh build/app/outputs/bundle/release/edu_01-v0.29.0-release.aab
+          ls -lh build/app/outputs/flutter-apk/edu_01-v0.32.0-*.apk
+          ls -lh build/app/outputs/bundle/release/edu_01-v0.32.0-release.aab
 
       - name: Upload universal release APK
         uses: actions/upload-artifact@v4
         with:
-          name: edu_01-v0.29.0-universal-release-apk
-          path: build/app/outputs/flutter-apk/edu_01-v0.29.0-universal-release.apk
+          name: edu_01-v0.32.0-universal-release-apk
+          path: build/app/outputs/flutter-apk/edu_01-v0.32.0-universal-release.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Upload ARM64 release APK
         uses: actions/upload-artifact@v4
         with:
-          name: edu_01-v0.29.0-arm64-release-apk
-          path: build/app/outputs/flutter-apk/edu_01-v0.29.0-arm64-release.apk
+          name: edu_01-v0.32.0-arm64-release-apk
+          path: build/app/outputs/flutter-apk/edu_01-v0.32.0-arm64-release.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Upload all split APKs
         uses: actions/upload-artifact@v4
         with:
-          name: edu_01-v0.29.0-split-release-apks
+          name: edu_01-v0.32.0-split-release-apks
           path: |
-            build/app/outputs/flutter-apk/edu_01-v0.29.0-arm64-release.apk
-            build/app/outputs/flutter-apk/edu_01-v0.29.0-armeabi-v7a-release.apk
-            build/app/outputs/flutter-apk/edu_01-v0.29.0-x86_64-release.apk
+            build/app/outputs/flutter-apk/edu_01-v0.32.0-arm64-release.apk
+            build/app/outputs/flutter-apk/edu_01-v0.32.0-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/edu_01-v0.32.0-x86_64-release.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Upload Play Store AAB
         uses: actions/upload-artifact@v4
         with:
-          name: edu_01-v0.29.0-play-store-aab
-          path: build/app/outputs/bundle/release/edu_01-v0.29.0-release.aab
+          name: edu_01-v0.32.0-play-store-aab
+          path: build/app/outputs/bundle/release/edu_01-v0.32.0-release.aab
           if-no-files-found: error
           retention-days: 30
