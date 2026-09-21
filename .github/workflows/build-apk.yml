@@ -25,6 +25,16 @@ jobs:
         run: |
           flutter create --platforms=android --org com.riccardopinato --project-name edu_01 .
 
+      - name: Download licensed anatomy assets for offline bundle
+        run: |
+          mkdir -p assets/anatomy
+          curl -L --fail --retry 3 "https://commons.wikimedia.org/wiki/Special:Redirect/file/Internal_organs.svg" -o assets/anatomy/organs.svg
+          curl -L --fail --retry 3 "https://commons.wikimedia.org/wiki/Special:Redirect/file/Human_skeleton_(svg_template).svg" -o assets/anatomy/skeleton.svg
+          curl -L --fail --retry 3 "https://commons.wikimedia.org/wiki/Special:Redirect/file/Muscles_front_and_back.svg" -o assets/anatomy/muscles.svg
+          curl -L --fail --retry 3 "https://commons.wikimedia.org/wiki/Special:Redirect/file/Nervous_system_diagram_unlabeled.svg" -o assets/anatomy/nervous.svg
+          curl -L --fail --retry 3 "https://commons.wikimedia.org/wiki/Special:Redirect/file/Circulatory_System_it.svg" -o assets/anatomy/vascular.svg
+          ls -lh assets/anatomy
+
       - name: Get dependencies
         run: flutter pub get
 
@@ -34,7 +44,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: edu_01-v0.18.0-debug-apk
+          name: edu_01-v0.19.0-offline-atlas-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 30
