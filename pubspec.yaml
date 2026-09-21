@@ -1,7 +1,7 @@
 name: edu_01
 description: Atlante interattivo del corpo umano
 publish_to: "none"
-version: 0.19.0+19
+version: 0.22.0+22
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_svg: ^2.3.0
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:
