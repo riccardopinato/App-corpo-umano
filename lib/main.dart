@@ -1,12 +1,15 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'histology.dart';
 import 'deep_dive.dart';
 import 'smart_study.dart';
 import 'games_v2.dart';
 import 'content_expansion.dart';
 import 'release_center.dart';
+import 'learning_path.dart';
+import 'exam_pro.dart';
 
 void main() => runApp(const HumanBodyApp());
 
@@ -116,7 +119,7 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final pages = <Widget>[
       TodayPage(answered: studyStore.totalAnswers, correct: studyStore.totalCorrect, openStudy: () => setState(() => tab = 3)),
-      const LearnPage(),
+      LearnPage(studyStore: studyStore),
       const AtlasPage(),
       SmartStudyV2Page(store: studyStore),
       ProfilePage(answered: studyStore.totalAnswers, correct: studyStore.totalCorrect, studyStore: studyStore),
@@ -187,7 +190,8 @@ class TodayPage extends StatelessWidget {
 }
 
 class LearnPage extends StatelessWidget {
-  const LearnPage({super.key});
+  final StudyProgressStore studyStore;
+  const LearnPage({super.key,required this.studyStore});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -206,6 +210,10 @@ class LearnPage extends StatelessWidget {
           FeatureCard(color:const Color(0xFFF0E8FF),emoji:'🔎',title:'Deep Dive anatomico',subtitle:'Entra dentro cuore, cervello, polmoni, reni, fegato e altri organi',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const DeepDiveHubPage()))),
           const SizedBox(height:10),
           FeatureCard(color:const Color(0xFFFFF0DD),emoji:'📚',title:'Catalogo completo',subtitle:'Muscoli, articolazioni, legamenti, linfatico, riproduttivo e dentizione decidua',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const ExpandedContentPage()))),
+          const SizedBox(height:10),
+          FeatureCard(color:const Color(0xFFE2F4F4),emoji:'🧭',title:'Learning Path',subtitle:'Percorso Base → Intermedio → Avanzato con prerequisiti e checkpoint',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>LearningPathPage(studyStore:studyStore)))),
+          const SizedBox(height:10),
+          FeatureCard(color:const Color(0xFFE8E7FF),emoji:'🎓',title:'Exam & Study Pro',subtitle:'Esami 10/20/50/100, timer, storico, mastery ed Error Notebook',onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ExamProPage(store:studyStore)))),
           const SizedBox(height:24),
           const Text('11 sistemi del corpo',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),
           const SizedBox(height:10),
@@ -298,11 +306,50 @@ class AtlasHotspot {
 }
 
 class _AtlasPageState extends State<AtlasPage> {
+  static const String _favoritesKey='edu01_atlas_favorites_v1';
   int layerIndex = 0;
   bool showLabels = true;
   String query = '';
+  String? isolatedName;
+  final Set<String> favorites=<String>{};
   final TransformationController _transform = TransformationController();
   Size _canvasSize = const Size(360, 600);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorites();
+  }
+
+  Future<void> _loadFavorites() async {
+    final prefs=await SharedPreferences.getInstance();
+    final saved=prefs.getStringList(_favoritesKey)??const <String>[];
+    if(!mounted)return;
+    setState(()=>favorites.addAll(saved));
+  }
+
+  Future<void> _toggleFavorite(String name) async {
+    setState(() {
+      if(favorites.contains(name)){
+        favorites.remove(name);
+      }else{
+        favorites.add(name);
+      }
+    });
+    final prefs=await SharedPreferences.getInstance();
+    await prefs.setStringList(_favoritesKey,favorites.toList()..sort());
+  }
+
+  void _focusFavorite(String name) {
+    for(var i=0;i<layers.length;i++){
+      for(final h in layers[i].hotspots){
+        if(h.name==name){
+          _focusHotspot(i,h);
+          return;
+        }
+      }
+    }
+  }
 
   static const layers = <AtlasLayerData>[
     AtlasLayerData(
@@ -451,6 +498,7 @@ class _AtlasPageState extends State<AtlasPage> {
     setState(() {
       layerIndex = newLayer;
       query = '';
+      isolatedName = h.name;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       const scale = 2.7;
@@ -478,6 +526,12 @@ class _AtlasPageState extends State<AtlasPage> {
       appBar: AppBar(
         title: const Text('Atlante anatomico'),
         actions: [
+          if(isolatedName!=null)
+            IconButton(
+              tooltip:'Mostra tutte le strutture',
+              onPressed:()=>setState(()=>isolatedName=null),
+              icon:const Icon(Icons.filter_center_focus),
+            ),
           IconButton(
             tooltip: showLabels ? 'Nascondi etichette' : 'Mostra etichette',
             onPressed: ()=>setState(()=>showLabels=!showLabels),
@@ -522,6 +576,24 @@ class _AtlasPageState extends State<AtlasPage> {
               )).toList(),
             ),
           ),
+        if(favorites.isNotEmpty)
+          SizedBox(
+            height:42,
+            child:ListView(
+              scrollDirection:Axis.horizontal,
+              padding:const EdgeInsets.symmetric(horizontal:12),
+              children:[
+                const Padding(
+                  padding:EdgeInsets.only(right:6),
+                  child:Chip(avatar:Icon(Icons.star,size:16),label:Text('Preferiti')),
+                ),
+                ...favorites.map((name)=>Padding(
+                  padding:const EdgeInsets.only(right:6),
+                  child:ActionChip(label:Text(name),onPressed:()=>_focusFavorite(name)),
+                )),
+              ],
+            ),
+          ),
         SizedBox(
           height:50,
           child:ListView.separated(
@@ -552,6 +624,8 @@ class _AtlasPageState extends State<AtlasPage> {
               _ZoomChip('Pelvi',Icons.change_history,()=>_quickZoom(.50,.62,3.0)),
               _ZoomChip('Arto sup.',Icons.pan_tool_alt_outlined,()=>_quickZoom(.24,.42,2.8)),
               _ZoomChip('Arto inf.',Icons.directions_walk,()=>_quickZoom(.44,.78,2.8)),
+              if(layer.id=='muscles') _ZoomChip('Anteriore',Icons.person_outline,()=>_quickZoom(.25,.50,1.75)),
+              if(layer.id=='muscles') _ZoomChip('Posteriore',Icons.person_2_outlined,()=>_quickZoom(.75,.50,1.75)),
             ],
           ),
         ),
@@ -582,7 +656,7 @@ class _AtlasPageState extends State<AtlasPage> {
                           semanticsLabel:layer.label,
                           placeholderBuilder:(_)=>const Center(child:CircularProgressIndicator()),
                         ),
-                        ...layer.hotspots.map((h)=>_AtlasHotspotWidget(
+                        ...layer.hotspots.where((h)=>isolatedName==null||h.name==isolatedName).map((h)=>_AtlasHotspotWidget(
                           hotspot:h,
                           showLabel:showLabels,
                           onTap:()=>_showHotspot(h,layer),
@@ -633,7 +707,27 @@ class _AtlasPageState extends State<AtlasPage> {
               Text('Layer: '+layer.label,style:const TextStyle(fontWeight:FontWeight.w800)),
               const SizedBox(height:8),
               const Text('Questa struttura è collegata all’Atlante e può essere usata come punto di partenza per ricerca, quiz e approfondimenti anatomici.',style:TextStyle(height:1.45)),
-              const SizedBox(height:16),
+              const SizedBox(height:12),
+              Wrap(
+                spacing:8,
+                runSpacing:8,
+                children:[
+                  OutlinedButton.icon(
+                    onPressed:()=>_toggleFavorite(h.name),
+                    icon:Icon(favorites.contains(h.name)?Icons.star:Icons.star_border),
+                    label:Text(favorites.contains(h.name)?'Preferito':'Aggiungi ai preferiti'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed:(){
+                      Navigator.pop(sheet);
+                      _focusHotspot(layerIndex,h);
+                    },
+                    icon:const Icon(Icons.filter_center_focus),
+                    label:const Text('Isola struttura'),
+                  ),
+                ],
+              ),
+              const SizedBox(height:12),
               Row(children:[
                 Expanded(child:OutlinedButton.icon(
                   onPressed:(){
@@ -844,7 +938,7 @@ class ProfilePage extends StatelessWidget {
               CircleAvatar(radius:34,child:Text('18',style:TextStyle(fontSize:24,fontWeight:FontWeight.w900))),
               SizedBox(width:16),
               Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-                Text('edu_01 · v0.25.0',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),
+                Text('edu_01 · v0.28.0',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900)),
                 Text('Atlante umano interattivo'),
               ])),
             ]),
@@ -872,7 +966,7 @@ class ProfilePage extends StatelessWidget {
             onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ReleaseCenterPage(studyStore:studyStore))),
           )),
           const SizedBox(height:8),
-          const Card(child:ListTile(leading:Icon(Icons.info_outline),title:Text('Build consolidata',style:TextStyle(fontWeight:FontWeight.w900)),subtitle:Text('edu_01 0.25.0+25 · Android · Release Candidate'))),
+          const Card(child:ListTile(leading:Icon(Icons.info_outline),title:Text('Build consolidata',style:TextStyle(fontWeight:FontWeight.w900)),subtitle:Text('edu_01 0.28.0+28 · Atlas Pro + Learning Path + Exam Pro'))),
         ],
       ),
     );
